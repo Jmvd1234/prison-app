@@ -25,8 +25,7 @@ public class newEntryActivity extends AppCompatActivity {
     }
 
     public void goHomeNE(View v){
-        Intent i = new Intent(this, HomeActivity.class);
-        startActivity(i);
+        finish();
     }
 
 }

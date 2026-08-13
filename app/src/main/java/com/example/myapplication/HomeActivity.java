@@ -9,8 +9,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import android.widget.ImageButton;
 
 public class HomeActivity extends AppCompatActivity {
+
+    ImageButton homeBackButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +25,9 @@ public class HomeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        homeBackButton = findViewById(R.id.homeBackButton);
+        homeBackButton.setOnClickListener(v -> {finish();});
+
     }
 
     public void open_dashboard(View v){

@@ -40,7 +40,6 @@
             android:layout_marginTop="20dp"
             android:layout_marginEnd="20dp"
             android:background="@null"
-            android:onClick="logOut"
             android:src="@drawable/outline_arrow_back_24" />
     </LinearLayout>
 

@@ -25,8 +25,7 @@ public class contactHelpActivity extends AppCompatActivity {
     }
 
     public void goHomeCH(View v){
-        Intent i = new Intent(this, HomeActivity.class);
-        startActivity(i);
+        finish();
     }
 
 }

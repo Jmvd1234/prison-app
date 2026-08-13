@@ -25,8 +25,7 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     public void goHome(View v){
-        Intent i = new Intent(this, HomeActivity.class);
-        startActivity(i);
+        finish();
     }
 
 }
