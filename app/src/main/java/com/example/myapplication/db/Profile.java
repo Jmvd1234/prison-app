@@ -6,6 +6,8 @@ import androidx.room.ForeignKey;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
+import java.time.Period;
+
 @Entity(
         //Basically this is the code for establishing a foreign key
         foreignKeys = @ForeignKey(
@@ -24,15 +26,17 @@ public class Profile {
     public String lastName;
 
     public int sentenceID;
-    public int sentenceLength;
+    public int sentenceYears;
+    public int sentenceMonths;
+    public int sentenceDays;
 
     public int STAL;
     public int GCTA;
     public int TASTM;
 
-    public int userID;
+    public long userID;
 
-    public int image_path;
+    public String image_path;
 
 
 }

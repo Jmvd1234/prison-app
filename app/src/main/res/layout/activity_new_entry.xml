@@ -160,7 +160,9 @@
                 android:paddingStart="7dp"
                 android:textSize="11sp"
                 android:hint="mm/dd/yy"
-                android:inputType="date"
+                android:focusable="false"
+                android:clickable="true"
+                android:inputType="none"
                 android:textColor="@color/black"/>
 
         </LinearLayout>
