@@ -70,34 +70,34 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void signIn(View v){
-//    //For now will just launch sign in page, when I set up databases will add a check into a function checking
-//    //if valid credentials, and only then redirect, otherwise it'll be an alert saying invalid
-//        Intent i = new Intent(this, HomeActivity.class);
-//        //this next code is what switches the activity
-//        startActivity(i);
 
         String input_username = signInUsername.getText().toString();
         String input_password = signInPassword.getText().toString();
-        User current_user = userDao.getUserByUsername(input_username);
-        if (current_user == null) {
-            Snackbar.make(layout, "User \"" + input_username + "\" does not exist.", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
-        }
-        else if (input_password.equals(current_user.password)) {
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putLong("currentUserID", current_user.userID);
-            editor.apply();
-            Intent i = new Intent(this, HomeActivity.class);
-            //this next code is what switches the activity
-            startActivity(i);
-        }
-        else {
-            Snackbar.make(layout, "Invalid Password!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
-        }
 
+        new Thread (() -> {
+            //running database action on separate thread to keep UI responsive
+            User current_user = userDao.getUserByUsername(input_username);
 
+            runOnUiThread(() -> {
+                if (current_user == null) {
+                    Snackbar.make(layout, "User \"" + input_username + "\" does not exist.", Snackbar.LENGTH_LONG)
+                            .setAction("Close", view -> {})
+                            .show();
+                }
+                else if (input_password.equals(current_user.password)) {
+                    SharedPreferences.Editor editor = sp.edit();
+                    editor.putLong("currentUserID", current_user.userID);
+                    editor.apply();
+                    Intent i = new Intent(this, HomeActivity.class);
+                    //this next code is what switches the activity
+                    startActivity(i);
+                }
+                else {
+                    Snackbar.make(layout, "Invalid Password!", Snackbar.LENGTH_LONG)
+                            .setAction("Close", view -> {})
+                            .show();
+                }
+            });
+        }).start();
     }
 }

@@ -6,6 +6,8 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
 
+import java.util.List;
+
 @Dao
 public interface ProfileDao {
 
@@ -13,10 +15,10 @@ public interface ProfileDao {
     long insertProfile(Profile profile);
 
     @Query("SELECT * FROM Profile where userID = :userID")
-    Profile getProfilesByUserID(int userID);
+    List<Profile> getProfilesByUserID(long userID);
 
-    @Query("SELECT * FROM Profile where profileID = :profileID")
-    Profile getProfilesByProfileID(int profileID);
+    @Query("SELECT * FROM Profile where profileID = :profileID LIMIT 1")
+    Profile getProfileByProfileID(int profileID);
 
     @Delete
     void deleteUser(Profile profile);

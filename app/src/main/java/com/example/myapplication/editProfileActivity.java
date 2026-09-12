@@ -1,12 +1,13 @@
 package com.example.myapplication;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,7 +19,6 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.myapplication.db.AppDatabase;
 import com.example.myapplication.db.Profile;
 import com.example.myapplication.db.ProfileDao;
-import com.example.myapplication.db.UserDao;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointBackward;
 import com.google.android.material.datepicker.MaterialDatePicker;
@@ -27,7 +27,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Calendar;
 
-public class newEntryActivity extends AppCompatActivity {
+public class editProfileActivity extends AppCompatActivity {
 
     EditText inputDate;
     EditText inputFirstName;
@@ -53,18 +53,22 @@ public class newEntryActivity extends AppCompatActivity {
 
     Calendar maxDate;
     CalendarConstraints constraints;
-
+    int profileID;
+    Profile profile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_new_entry);
+        setContentView(R.layout.activity_edit_profile);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        profileID = getIntent().getIntExtra("profileID", -1);
+        //storing the profileID transferred from the other file
 
         inputFirstName = findViewById(R.id.inputFirstName);
         inputLastName = findViewById(R.id.inputLastName);
@@ -89,15 +93,31 @@ public class newEntryActivity extends AppCompatActivity {
 
         deleteEntryButton = findViewById(R.id.deleteEntryButton);
         deleteEntryButton.setOnClickListener(v -> {
-            finish();
+            deleteProfile();
         });
 
         sp = getSharedPreferences("user_session", Context.MODE_PRIVATE);
 
         db = AppDatabase.getInstance(this.getApplicationContext());
         profileDao = db.ProfileDao();
+        System.out.println("PASSED PROFILE ID: " + profileID);
 
+        profile = profileDao.getProfileByProfileID(profileID);
+
+        System.out.println("PROFILE FOUND: " + profile);
         layout = findViewById(R.id.main);
+
+        //Setting initial field values
+        inputFirstName.setText(profile.firstName);
+        inputLastName.setText(profile.lastName);
+        inputYears.setText(String.valueOf(profile.sentenceYears));
+        inputMonths.setText(String.valueOf(profile.sentenceMonths));
+        inputDays.setText(String.valueOf(profile.sentenceDays));
+        inputCrime.setText(profile.chargeName);
+        inputGCTA.setText(String.valueOf(profile.GCTA));
+        inputSTAL.setText(String.valueOf(profile.STAL));
+        inputTASTM.setText(String.valueOf(profile.TASTM));
+        inputDate.setText(profile.arrestDate);
 
         //setting constraints for the date picker
         maxDate = Calendar.getInstance();
@@ -106,9 +126,7 @@ public class newEntryActivity extends AppCompatActivity {
         constraints = new CalendarConstraints.Builder()
                 .setValidator(DateValidatorPointBackward.before(maxDate.getTimeInMillis()))
                 .build();
-
     }
-
     private void showDatePickerDialog() {
         MaterialDatePicker materialDatePicker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText("Select Date")
@@ -125,11 +143,16 @@ public class newEntryActivity extends AppCompatActivity {
         materialDatePicker.show(getSupportFragmentManager(), "TAG");
     }
 
+    private void deleteProfile() {
+        new Thread(()-> {
+            profileDao.deleteUser(profile);
+            runOnUiThread(() -> finish());
+        }).start();
+    }
+
     private void saveProfile() {
         /// Note: Need to add validation. Check if null, if valid range, etc
-        Profile profile = new Profile();
-        profile.userID = sp.getLong("currentUserID", -1);
-        //default value of -1 if the user ID is not found for any reason
+
         if (inputFirstName.getText().toString().isEmpty()) {
             Snackbar.make(layout, "First Name cannot be empty!", Snackbar.LENGTH_LONG)
                     .setAction("Close", view -> {})
@@ -186,7 +209,7 @@ public class newEntryActivity extends AppCompatActivity {
         profile.image_path = "";
 
         new Thread(() -> {
-            profileDao.insertProfile(profile);
+            profileDao.updateUser(profile);
             runOnUiThread(() -> finish());
         }).start();
 

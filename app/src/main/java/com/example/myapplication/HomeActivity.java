@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 
@@ -48,5 +49,10 @@ public class HomeActivity extends AppCompatActivity {
     public void logOut(View v){
         Intent i = new Intent(this, MainActivity.class);
         startActivity(i);
+        getSharedPreferences("user_session", MODE_PRIVATE)
+                .edit()
+                .remove("currentUserID")
+                .apply();
+        finish();
     }
 }

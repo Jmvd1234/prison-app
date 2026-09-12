@@ -25,7 +25,8 @@ public class Profile {
     public String firstName;
     public String lastName;
 
-    public int sentenceID;
+    public String chargeName;
+    public String arrestDate;
     public int sentenceYears;
     public int sentenceMonths;
     public int sentenceDays;

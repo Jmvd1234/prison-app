@@ -53,25 +53,34 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void saveNewUser(String input_username, String input_password) {
-        //WILL NEED TO ADD FRICKIONG VALIDATION!! THAT NO OTHER USER EXSISTS, NOR THIS CONTAINS INVALID CHARACTERS
-        if (userDao.countUsersWithUsername(input_username) > 0) {
-            Snackbar.make(layout, "User \"" + input_username + "\" already exists!.", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
-        }
-        else {
-            User user = new User();
-            user.username = input_username;
-            user.password=input_password;
-            long user_ID = db.UserDao().insertUser(user);
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putLong("currentUserID", user_ID);
-            editor.apply();
-            Intent i = new Intent(this, HomeActivity.class);
-            //this next code is what switches the activity
-            startActivity(i);
-            finish();
-        }
-    }
 
+        new Thread(() -> {
+            //WILL NEED TO ADD FRICKIONG VALIDATION!! THAT NO OTHER USER EXSISTS, NOR THIS CONTAINS INVALID CHARACTERS
+            if (userDao.countUsersWithUsername(input_username) > 0) {
+                runOnUiThread(() -> {
+                    Snackbar.make(layout, "User \"" + input_username + "\" already exists!.", Snackbar.LENGTH_LONG)
+                            .setAction("Close", view -> {})
+                            .show();
+                });
+            }
+            else {
+                User user = new User();
+                user.username = input_username;
+                user.password=input_password;
+                long user_ID = db.UserDao().insertUser(user);
+                SharedPreferences.Editor editor = sp.edit();
+                editor.putLong("currentUserID", user_ID);
+                editor.apply();
+
+                runOnUiThread(() -> {
+                    Intent i = new Intent(this, HomeActivity.class);
+                    //this next code is what switches the activity
+                    startActivity(i);
+                    finish();
+                });
+            }
+        }).start();
+
+
+    }
 }
