@@ -1,7 +1,16 @@
 package com.example.myapplication;
 
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.widget.TextView;
+
+import com.google.android.material.materialswitch.MaterialSwitch;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -18,7 +27,6 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.myapplication.db.AppDatabase;
 import com.example.myapplication.db.Profile;
 import com.example.myapplication.db.ProfileDao;
-import com.example.myapplication.db.UserDao;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointBackward;
 import com.google.android.material.datepicker.MaterialDatePicker;
@@ -29,18 +37,31 @@ import java.util.Calendar;
 
 public class newEntryActivity extends AppCompatActivity {
 
-    EditText inputDate;
     EditText inputFirstName;
     EditText inputLastName;
-    EditText inputYears;
-    EditText inputMonths;
-    EditText inputDays;
-    EditText inputCrime;
-    EditText inputGCTA;
-    EditText inputSTAL;
-    EditText inputTASTM;
 
-    String selectedArrestDate;
+    EditText inputObservationDate;
+    EditText inputLEADate;
+    EditText inputCommitmentDate;
+
+    EditText inputMinYears;
+    EditText inputMinMonths;
+    EditText inputMinDays;
+
+    EditText inputMaxYears;
+    EditText inputMaxMonths;
+    EditText inputMaxDays;
+
+    EditText inputDeductionRaw;
+    EditText inputTimeGap;
+
+    Spinner inputSTAL;
+
+    MaterialSwitch committedSwitch;
+    MaterialSwitch disqualifiedCPISwitch;
+    MaterialSwitch disqualifiedTASwitch;
+
+    TextView commitmentDateLabel;
 
     Button saveEntryButton;
     Button deleteEntryButton;
@@ -50,9 +71,6 @@ public class newEntryActivity extends AppCompatActivity {
     AppDatabase db;
     ProfileDao profileDao;
     ConstraintLayout layout;
-
-    Calendar maxDate;
-    CalendarConstraints constraints;
 
 
     @Override
@@ -68,18 +86,61 @@ public class newEntryActivity extends AppCompatActivity {
 
         inputFirstName = findViewById(R.id.inputFirstName);
         inputLastName = findViewById(R.id.inputLastName);
-        inputYears = findViewById(R.id.inputYears);
-        inputMonths = findViewById(R.id.inputMonths);
-        inputDays = findViewById(R.id.inputDays);
-        inputCrime = findViewById(R.id.inputCrime);
-        inputGCTA = findViewById(R.id.inputGCTA);
+
+        inputObservationDate = findViewById(R.id.inputObservationDate);
+        inputLEADate = findViewById(R.id.inputLEADate);
+        inputCommitmentDate = findViewById(R.id.inputCommitmentDate);
+
+        inputMinYears = findViewById(R.id.inputMinYears);
+        inputMinMonths = findViewById(R.id.inputMinMonths);
+        inputMinDays = findViewById(R.id.inputMinDays);
+
+        inputMaxYears = findViewById(R.id.inputMaxYears);
+        inputMaxMonths = findViewById(R.id.inputMaxMonths);
+        inputMaxDays = findViewById(R.id.inputMaxDays);
+
+        inputDeductionRaw = findViewById(R.id.inputDeductionRaw);
+        inputTimeGap = findViewById(R.id.inputTimeGap);
+
         inputSTAL = findViewById(R.id.inputSTAL);
-        inputTASTM = findViewById(R.id.inputTASTM);
 
+        committedSwitch = findViewById(R.id.committedSwitch);
+        disqualifiedCPISwitch = findViewById(R.id.disqualifiedCPISwitch);
+        disqualifiedTASwitch = findViewById(R.id.disqualifiedTASwitch);
 
-        inputDate = findViewById(R.id.inputDate);
-        inputDate.setOnClickListener(v -> {
-            showDatePickerDialog();
+        commitmentDateLabel = findViewById(R.id.commitmentDateLabel);
+
+        //Makes the default observation date today's date WHEN THE ACTIVITY IS FIRST CREATED
+        if (savedInstanceState == null) { //prevents rewriting the date if there is a saved state that is NOT null
+            SimpleDateFormat formatter =
+                    new SimpleDateFormat("MMM d, yyyy", Locale.US);
+
+            inputObservationDate.setText(
+                    formatter.format(new Date())
+            );
+        }
+
+        //Onclick listeners to input/edit the different  dates.
+        //Note: Storing observation date lowkey does not make sense, we edit this LATERRR frick
+        inputObservationDate.setOnClickListener(v -> {
+            showDatePickerDialog(
+                    inputObservationDate,
+                    "Select Observation Date"
+            );
+        });
+
+        inputLEADate.setOnClickListener(v -> {
+            showDatePickerDialog(
+                    inputLEADate,
+                    "Select LEA Arrest Date"
+            );
+        });
+
+        inputCommitmentDate.setOnClickListener(v -> {
+            showDatePickerDialog(
+                    inputCommitmentDate,
+                    commitmentDateLabel.getText().toString()
+            );
         });
 
         saveEntryButton = findViewById(R.id.saveEntryButton);
@@ -99,97 +160,285 @@ public class newEntryActivity extends AppCompatActivity {
 
         layout = findViewById(R.id.main);
 
-        //setting constraints for the date picker
-        maxDate = Calendar.getInstance();
+        //STAL is a special type of deduction
+        //Basically removes a percentage of an inmate's deduction based on different scenarios
+        //which are presented here
+        String[] stalOptions = {
+                "None",
+                "Returned After a Disaster (20%)",
+                "Did Not Leave (40%)"
+        };
 
-        //will only allow dates before or including the current date
-        constraints = new CalendarConstraints.Builder()
-                .setValidator(DateValidatorPointBackward.before(maxDate.getTimeInMillis()))
-                .build();
+        ArrayAdapter<String> stalAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                stalOptions
+        );
+
+        stalAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+        inputSTAL.setAdapter(stalAdapter);
+
+        //IF not committed to jail
+        //need to change the text from jail commitment date to prison commitment date
+        //TODO: Check how this changes the calculations as well
+        committedSwitch.setOnCheckedChangeListener(
+                (buttonView, isChecked) -> {
+
+                    if (isChecked) {
+                        commitmentDateLabel.setText(
+                                "Prison Commitment Date"
+                        );
+                    }
+                    else {
+                        commitmentDateLabel.setText(
+                                "Jail Commitment Date"
+                        );
+                    }
+                }
+        );
+
+        //Along with subtracting the other time allowances
+        //This function means that it should also not accept inputs
+        //from the STAL dropdown
+        //Value preserved BUT does not mean it will be used in the calculations
+        disqualifiedTASwitch.setOnCheckedChangeListener(
+                (buttonView, isChecked) -> {
+
+                    inputSTAL.setEnabled(!isChecked);
+
+                }
+        );
 
     }
 
-    private void showDatePickerDialog() {
-        MaterialDatePicker materialDatePicker = MaterialDatePicker.Builder.datePicker()
-                .setTitleText("Select Date")
-                .setCalendarConstraints(constraints)
-                .build();
+    //two inputs: the id of the field being edited, and the title of the date picker
+    private void showDatePickerDialog(EditText target, String title) {
 
-        materialDatePicker.addOnPositiveButtonClickListener(new MaterialPickerOnPositiveButtonClickListener() {
-            @Override
-            public void onPositiveButtonClick(Object o) {
-                inputDate.setText("" + materialDatePicker.getHeaderText());
-            }
+        MaterialDatePicker<Long> materialDatePicker =
+                MaterialDatePicker.Builder.datePicker()
+                        .setTitleText(title)
+                        .setSelection(
+                                MaterialDatePicker.todayInUtcMilliseconds()
+                        )
+                        .build();
+
+        materialDatePicker.addOnPositiveButtonClickListener(selection -> {
+            //updates the displayed date inside the text box based on what is chosen
+            target.setText(materialDatePicker.getHeaderText());
         });
 
-        materialDatePicker.show(getSupportFragmentManager(), "TAG");
+        materialDatePicker.show(
+                getSupportFragmentManager(),
+                "DATE_PICKER"
+        );
+    }
+
+    private int getIntOrZero(EditText input) {
+        //For the input years, because some of their inputs are optional and should just return zero
+        //therefore will just save 0 if they are empty
+
+        if (input.getText().toString().isEmpty()) {
+            return 0;
+        }
+
+        return Integer.parseInt(
+                input.getText().toString()
+        );
     }
 
     private void saveProfile() {
-        /// Note: Need to add validation. Check if null, if valid range, etc
+
         Profile profile = new Profile();
-        profile.userID = sp.getLong("currentUserID", -1);
-        //default value of -1 if the user ID is not found for any reason
-        if (inputFirstName.getText().toString().isEmpty()) {
-            Snackbar.make(layout, "First Name cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+
+        profile.userID =
+                sp.getLong("currentUserID", -1);
+
+
+
+        //saving + validating first name
+        if (inputFirstName.getText().toString().trim().isEmpty()) {
+
+            Snackbar.make(
+                    layout,
+                    "First Name cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
+
             return;
         }
-        profile.firstName = inputFirstName.getText().toString();
-        if (inputLastName.getText().toString().isEmpty()) {
-            Snackbar.make(layout, "Last Name cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+
+        profile.firstName =
+                inputFirstName.getText().toString().trim();
+
+
+        //saving + validating last name
+        if (inputLastName.getText().toString().trim().isEmpty()) {
+
+            Snackbar.make(
+                    layout,
+                    "Last Name cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
+
             return;
         }
-        profile.lastName = inputLastName.getText().toString();
-        //Default inputs of 0 for the integer inputs
-        if (inputDate.getText().toString().isEmpty()) {
-            Snackbar.make(layout, "Incarceration Date cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+
+        profile.lastName =
+                inputLastName.getText().toString().trim();
+
+
+        //Validating all dates
+        if (inputObservationDate.getText().toString().isEmpty()) {
+
+            Snackbar.make(
+                    layout,
+                    "Observation Date cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
+
             return;
         }
-        profile.arrestDate = inputDate.getText().toString();
-        profile.sentenceYears = inputYears.getText().toString().isEmpty()
-                ? 0
-                : Integer.parseInt(inputYears.getText().toString());
-        profile.sentenceMonths = inputMonths.getText().toString().isEmpty()
-                ? 0
-                : Integer.parseInt(inputMonths.getText().toString());
-        profile.sentenceDays = inputDays.getText().toString().isEmpty()
-                ? 0
-                : Integer.parseInt(inputDays.getText().toString());
-        if (profile.sentenceYears + profile.sentenceMonths + profile.sentenceDays == 0) {
-            Snackbar.make(layout, "Sentence Length cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+
+        if (inputLEADate.getText().toString().isEmpty()) {
+
+            Snackbar.make(
+                    layout,
+                    "LEA Arrest Date cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
+
             return;
         }
-        profile.STAL = inputSTAL.getText().toString().isEmpty()
-                ? 0
-                : Integer.parseInt(inputSTAL.getText().toString());
-        profile.GCTA = inputGCTA.getText().toString().isEmpty()
-                ? 0
-                : Integer.parseInt(inputGCTA.getText().toString());
-        profile.TASTM = inputTASTM.getText().toString().isEmpty()
-                ? 0
-                : Integer.parseInt(inputTASTM.getText().toString());
-        if (inputCrime.getText().toString().isEmpty()) {
-            Snackbar.make(layout, "Crime Charged cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+
+        if (inputCommitmentDate.getText().toString().isEmpty()) {
+
+            Snackbar.make(
+                    layout,
+                    "Commitment Date cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
+
             return;
         }
-        profile.chargeName = inputCrime.getText().toString();
+
+
+        profile.observationDate =
+                inputObservationDate.getText().toString();
+
+        profile.leaArrestDate =
+                inputLEADate.getText().toString();
+
+        profile.commitmentDate =
+                inputCommitmentDate.getText().toString();
+
+
+        //getting minimum penalty times
+        profile.minYears =
+                getIntOrZero(inputMinYears);
+
+        profile.minMonths =
+                getIntOrZero(inputMinMonths);
+
+        profile.minDays =
+                getIntOrZero(inputMinDays);
+
+
+        if (profile.minYears
+                + profile.minMonths
+                + profile.minDays == 0) {
+
+            Snackbar.make(
+                    layout,
+                    "Minimum Penalty Period cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
+
+            return;
+        }
+
+
+
+        //getting maximum penalty times
+        profile.maxYears =
+                getIntOrZero(inputMaxYears);
+
+        profile.maxMonths =
+                getIntOrZero(inputMaxMonths);
+
+        profile.maxDays =
+                getIntOrZero(inputMaxDays);
+
+
+        if (profile.maxYears
+                + profile.maxMonths
+                + profile.maxDays == 0) {
+
+            Snackbar.make(
+                    layout,
+                    "Maximum Penalty Period cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
+
+            return;
+        }
+
+
+        //saving how the switches are triggered
+        profile.notCommittedToJail =
+                committedSwitch.isChecked();
+
+        profile.disqualifiedForCPI =
+                disqualifiedCPISwitch.isChecked();
+
+        profile.disqualifiedForTimeAllowances =
+                disqualifiedTASwitch.isChecked();
+
+
+
+        //Because inputSTAL uses an array for a dropdown
+        //can use a switch-case statement for different outcomes
+        //Based on the current part of the array selected by the dropdown
+        switch (inputSTAL.getSelectedItemPosition()) {
+
+            case 0:
+                profile.stalPercent = 0;
+                break;
+
+            case 1:
+                profile.stalPercent = 20;
+                break;
+
+            case 2:
+                profile.stalPercent = 40;
+                break;
+        }
+
+
+
+        //storing extra adjustments
+        //TODO: Make sense of these
+        profile.deductionDays =
+                getIntOrZero(inputDeductionRaw);
+
+        profile.timeGapDays =
+                getIntOrZero(inputTimeGap);
+
+
         profile.image_path = "";
 
-        new Thread(() -> {
-            profileDao.insertProfile(profile);
-            runOnUiThread(() -> finish());
-        }).start();
 
+
+        //Saving everything to Room
+        new Thread(() -> {
+
+            profileDao.insertProfile(profile);
+
+            runOnUiThread(() -> finish());
+
+        }).start();
     }
 
     public void goHomeNE(View v){

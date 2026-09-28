@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
@@ -9,12 +12,14 @@
     android:background="@drawable/login_background">
 
     <LinearLayout
+        android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginBottom="10dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -44,340 +49,565 @@
             android:src="@drawable/outline_bungalow_24" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="360dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:text="ADD ENTRY"
-        android:textSize="35sp"
-        />
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:orientation="horizontal"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="parent"
+            android:layout_marginHorizontal="25dp">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/profileImage"
-                android:layout_width="170dp"
-                android:layout_height="170dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:contentDescription="Upload profile image"
-                android:scaleType="centerCrop"
-                android:src="@drawable/outline_account_box_24"
-                app:strokeColor="#999999"
-                app:strokeWidth="3dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:text="ADD ENTRY"
+            android:textSize="35sp"
+            />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="start"
-                android:paddingStart="15dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/profileImage"
+                    android:layout_width="170dp"
+                    android:layout_height="170dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="Upload profile image"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/outline_account_box_24"
+                    app:strokeColor="#999999"
+                    app:strokeWidth="3dp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="start"
+                    android:paddingStart="15dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="First Name"
+                        android:textColor="@color/black"
+                        android:textSize="20sp"/>
+                    <EditText
+                        android:id="@+id/inputFirstName"
+                        android:layout_width="120dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/entertextbox"
+                        android:layout_marginVertical="5dp"
+                        android:paddingStart="7dp"
+                        android:textSize="11sp"
+                        android:hint="e.g. John"
+                        android:textColor="@color/black"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Last Name"
+                        android:textColor="@color/black"
+                        android:textSize="20sp"/>
+                    <EditText
+                        android:id="@+id/inputLastName"
+                        android:layout_width="120dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/entertextbox"
+                        android:layout_marginVertical="5dp"
+                        android:paddingStart="7dp"
+                        android:textSize="11sp"
+                        android:hint="e.g. Doe"
+                        android:textColor="@color/black"/>
+
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@android:color/black"
+                android:layout_marginVertical="10dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="First Name"
+                    android:text="Observation Date"
                     android:textColor="@color/black"
                     android:textSize="20sp"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
                 <EditText
-                    android:id="@+id/inputFirstName"
+                    android:id="@+id/inputObservationDate"
                     android:layout_width="120dp"
                     android:layout_height="32dp"
                     android:background="@drawable/entertextbox"
                     android:layout_marginVertical="5dp"
                     android:paddingStart="7dp"
                     android:textSize="11sp"
-                    android:hint="e.g. John"
+                    android:hint="mm/dd/yy"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:inputType="none"
                     android:textColor="@color/black"/>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@android:color/black"
+                android:layout_marginVertical="10dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Last Name"
+                    android:text="Min. Penalty Period"
                     android:textColor="@color/black"
                     android:textSize="20sp"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
                 <EditText
-                    android:id="@+id/inputLastName"
+                    android:id="@+id/inputMinYears"
+                    android:layout_width="50dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Years"
+                    android:inputType="number"
+                    android:textColor="@color/black"/>
+
+                <EditText
+                    android:id="@+id/inputMinMonths"
+                    android:layout_width="50dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Months"
+                    android:inputType="number"
+                    android:textColor="@color/black"
+                    android:layout_marginStart="5dp"/>
+
+                <EditText
+                    android:id="@+id/inputMinDays"
+                    android:layout_width="50dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Days"
+                    android:inputType="number"
+                    android:textColor="@color/black"
+                    android:layout_marginStart="5dp"/>
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Max. Penalty Period"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
+                <EditText
+                    android:id="@+id/inputMaxYears"
+                    android:layout_width="50dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Years"
+                    android:inputType="number"
+                    android:textColor="@color/black"/>
+
+                <EditText
+                    android:id="@+id/inputMaxMonths"
+                    android:layout_width="50dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Months"
+                    android:inputType="number"
+                    android:textColor="@color/black"
+                    android:layout_marginStart="5dp"/>
+
+                <EditText
+                    android:id="@+id/inputMaxDays"
+                    android:layout_width="50dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Days"
+                    android:inputType="number"
+                    android:textColor="@color/black"
+                    android:layout_marginStart="5dp"/>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@android:color/black"
+                android:layout_marginVertical="10dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LEA Arrest Date"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
+                <EditText
+                    android:id="@+id/inputLEADate"
                     android:layout_width="120dp"
                     android:layout_height="32dp"
                     android:background="@drawable/entertextbox"
                     android:layout_marginVertical="5dp"
                     android:paddingStart="7dp"
                     android:textSize="11sp"
-                    android:hint="e.g. Doe"
+                    android:hint="mm/dd/yy"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:inputType="none"
                     android:textColor="@color/black"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:id="@+id/commitmentDateLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jail Commitment Date"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
+                <EditText
+                    android:id="@+id/inputCommitmentDate"
+                    android:layout_width="120dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="mm/dd/yy"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:inputType="none"
+                    android:textColor="@color/black"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Not Committed To Jail"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/committedSwitch"
+                    layout_width="wrap_content"
+                    layout_height="wrap_content"
+                    android:checked="false"
+                    android:layout_height="10dp"
+                    android:layout_width="60dp"
+                    android:layout_marginVertical="3dp"/>
 
 
             </LinearLayout>
 
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Incarceration Date"
-                android:textColor="@color/black"
-                android:textSize="20sp"/>
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Disqualified for CPI"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
 
-            <EditText
-                android:id="@+id/inputDate"
-                android:layout_width="120dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="mm/dd/yy"
-                android:focusable="false"
-                android:clickable="true"
-                android:inputType="none"
-                android:textColor="@color/black"/>
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
 
-        </LinearLayout>
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/disqualifiedCPISwitch"
+                    layout_width="wrap_content"
+                    layout_height="wrap_content"
+                    android:checked="false"
+                    android:layout_height="10dp"
+                    android:layout_width="60dp"
+                    android:layout_marginVertical="3dp"/>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
 
-            <TextView
-                android:layout_width="wrap_content"
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sentence Length"
-                android:textColor="@color/black"
-                android:textSize="20sp"/>
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Disqualified for Time Allowances"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
 
-            <EditText
-                android:id="@+id/inputYears"
-                android:layout_width="50dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="Years"
-                android:inputType="number"
-                android:textColor="@color/black"/>
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
 
-            <EditText
-                android:id="@+id/inputMonths"
-                android:layout_width="50dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="Months"
-                android:inputType="number"
-                android:textColor="@color/black"
-                android:layout_marginStart="5dp"/>
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/disqualifiedTASwitch"
+                    layout_width="wrap_content"
+                    layout_height="wrap_content"
+                    android:checked="false"
+                    android:layout_height="10dp"
+                    android:layout_width="60dp"
+                    android:layout_marginVertical="3dp"/>
 
-            <EditText
-                android:id="@+id/inputDays"
-                android:layout_width="50dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="Days"
-                android:inputType="number"
-                android:textColor="@color/black"
-                android:layout_marginStart="5dp"/>
 
-        </LinearLayout>
+            </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@android:color/black"
+                android:layout_marginVertical="10dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Crime Charged"
-                android:textColor="@color/black"
-                android:textSize="20sp"/>
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STAL (Loyalty Credit)"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
 
-            <EditText
-                android:id="@+id/inputCrime"
-                android:layout_width="120dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="e.g. Simple Theft"
-                android:inputType="text"
-                android:textColor="@color/black"/>
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
 
-        </LinearLayout>
+                <Spinner
+                    android:id="@+id/inputSTAL"
+                    android:layout_width="130dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:spinnerMode="dropdown" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="GCTA"
-                android:textColor="@color/black"
-                android:textSize="20sp"/>
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Deductions"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
 
-            <EditText
-                android:id="@+id/inputGCTA"
-                android:layout_width="120dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="Hours"
-                android:inputType="number"
-                android:textColor="@color/black"/>
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
 
-        </LinearLayout>
+                <EditText
+                    android:id="@+id/inputDeductionRaw"
+                    android:layout_width="120dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Days"
+                    android:inputType="number"
+                    android:textColor="@color/black"/>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="TASTM"
-                android:textColor="@color/black"
-                android:textSize="20sp"/>
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Time Gap on Bail/ATI"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"/>
 
-            <EditText
-                android:id="@+id/inputTASTM"
-                android:layout_width="120dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="Hours"
-                android:inputType="number"
-                android:textColor="@color/black"/>
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"/>
+
+                <EditText
+                    android:id="@+id/inputTimeGap"
+                    android:layout_width="120dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/entertextbox"
+                    android:layout_marginVertical="5dp"
+                    android:paddingStart="7dp"
+                    android:textSize="11sp"
+                    android:hint="Days"
+                    android:inputType="number"
+                    android:textColor="@color/black"/>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@android:color/black"
+                android:layout_marginVertical="10dp"/>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/saveEntryButton"
+                android:layout_marginTop="10dp"
+                android:layout_width="250dp"
+                android:layout_height="50dp"
+                android:background="@drawable/credentials_background"
+                android:textStyle="bold"
+                android:textSize="24sp"
+                android:text="SAVE ENTRY"/>
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/deleteEntryButton"
+                android:layout_marginTop="10dp"
+                android:layout_width="250dp"
+                android:layout_height="50dp"
+                android:background="@drawable/delete_background"
+                android:textStyle="bold"
+                android:textSize="24sp"
+                android:text="DELETE ENTRY"/>
 
         </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="STAL"
-                android:textColor="@color/black"
-                android:textSize="20sp"/>
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"/>
-
-            <!-- Change this with a date picker!!! -->
-            <EditText
-                android:id="@+id/inputSTAL"
-                android:layout_width="120dp"
-                android:layout_height="32dp"
-                android:background="@drawable/entertextbox"
-                android:layout_marginVertical="5dp"
-                android:paddingStart="7dp"
-                android:textSize="11sp"
-                android:hint="Hours"
-                android:inputType="number"
-                android:textColor="@color/black"/>
-
-        </LinearLayout>
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/saveEntryButton"
-            android:layout_marginTop="10dp"
-            android:layout_width="250dp"
-            android:layout_height="50dp"
-            android:background="@drawable/credentials_background"
-            android:textStyle="bold"
-            android:textSize="24sp"
-            android:text="SAVE ENTRY"/>
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/deleteEntryButton"
-            android:layout_marginTop="10dp"
-            android:layout_width="250dp"
-            android:layout_height="50dp"
-            android:background="@drawable/delete_background"
-            android:textStyle="bold"
-            android:textSize="24sp"
-            android:text="DELETE ENTRY"/>
-
-    </LinearLayout>
-
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

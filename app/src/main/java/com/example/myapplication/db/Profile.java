@@ -25,15 +25,26 @@ public class Profile {
     public String firstName;
     public String lastName;
 
-    public String chargeName;
-    public String arrestDate;
-    public int sentenceYears;
-    public int sentenceMonths;
-    public int sentenceDays;
+    public String observationDate;
+    public String leaArrestDate;
+    public String commitmentDate;
 
-    public int STAL;
-    public int GCTA;
-    public int TASTM;
+    public int minYears;
+    public int minMonths;
+    public int minDays;
+
+    public int maxYears;
+    public int maxMonths;
+    public int maxDays;
+
+    public boolean notCommittedToJail;
+    public boolean disqualifiedForCPI;
+    public boolean disqualifiedForTimeAllowances;
+
+    public int stalPercent;
+
+    public int deductionDays;
+    public int timeGapDays;
 
     public long userID;
 

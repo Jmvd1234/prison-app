@@ -1,27 +1,66 @@
 package com.example.myapplication;
 
 public class profileModel {
-    String firstName;
-    String lastName;
-    String charge;
-    String arrestDate;
-    String timeLeft;
-    String timeOverdue;
-    String suggestedAction;
-    int profileID;
-    //storing profile ID so can be used to edit it in the future
-    int image;
 
-    public profileModel(int profileID, String firstName, String lastName, String charge, String arrestDate, String timeLeft, String timeOverdue, String suggestedAction, int image) {
+    private int profileID;
+
+    private String firstName;
+    private String lastName;
+
+    private String leaArrestDate;
+
+    private String commitmentDate;
+    private boolean notCommittedToJail;
+
+    private String minTimeRemaining;
+    private String maxTimeRemaining;
+
+    private long minRemainingDays;
+    private long maxRemainingDays;
+
+    private String suggestedAction;
+
+    private int image;
+
+
+    public profileModel(
+            int profileID,
+            String firstName,
+            String lastName,
+            String leaArrestDate,
+            String commitmentDate,
+            boolean notCommittedToJail,
+            String minTimeRemaining,
+            String maxTimeRemaining,
+            long minRemainingDays,
+            long maxRemainingDays,
+            String suggestedAction,
+            int image) {
+
+        this.profileID = profileID;
+
         this.firstName = firstName;
         this.lastName = lastName;
-        this.charge = charge;
-        this.arrestDate = arrestDate;
-        this.timeLeft = timeLeft;
-        this.timeOverdue = timeOverdue;
+
+        this.leaArrestDate = leaArrestDate;
+
+        this.commitmentDate = commitmentDate;
+        this.notCommittedToJail = notCommittedToJail;
+
+        this.minTimeRemaining = minTimeRemaining;
+        this.maxTimeRemaining = maxTimeRemaining;
+
+        this.minRemainingDays = minRemainingDays;
+        this.maxRemainingDays = maxRemainingDays;
+
         this.suggestedAction = suggestedAction;
+
         this.image = image;
-        this.profileID = profileID;
+    }
+
+
+    public int getProfileID() {
+        return profileID;
     }
 
     public String getFirstName() {
@@ -32,20 +71,32 @@ public class profileModel {
         return lastName;
     }
 
-    public String getCharge() {
-        return charge;
+    public String getLEAArrestDate() {
+        return leaArrestDate;
     }
 
-    public String getArrestDate() {
-        return arrestDate;
+    public String getCommitmentDate() {
+        return commitmentDate;
     }
 
-    public String getTimeLeft() {
-        return timeLeft;
+    public boolean isNotCommittedToJail() {
+        return notCommittedToJail;
     }
 
-    public String getTimeOverdue() {
-        return timeOverdue;
+    public String getMinTimeRemaining() {
+        return minTimeRemaining;
+    }
+
+    public String getMaxTimeRemaining() {
+        return maxTimeRemaining;
+    }
+
+    public long getMinRemainingDays() {
+        return minRemainingDays;
+    }
+
+    public long getMaxRemainingDays() {
+        return maxRemainingDays;
     }
 
     public String getSuggestedAction() {
@@ -55,6 +106,4 @@ public class profileModel {
     public int getImage() {
         return image;
     }
-
-    public int getProfileID() { return profileID; }
 }
