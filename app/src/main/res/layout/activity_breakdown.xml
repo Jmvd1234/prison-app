@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/login_background"
+    android:orientation="vertical"
+    tools:context=".BreakdownActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="12dp">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/breakdownBackButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/breakdown_back"
+            android:padding="12dp"
+            app:srcCompat="@drawable/outline_arrow_back_24"
+            app:tint="@color/breakdown_ink" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="@string/breakdown_screen_title"
+            android:textColor="@color/breakdown_ink"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="24dp">
+
+            <TextView
+                android:id="@+id/breakdownProfileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textColor="@color/breakdown_ink"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="Alex Rivera"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/breakdownObservationDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="8dp"
+                android:textColor="@color/breakdown_secondary_ink"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:text="Observation date: Feb 20, 2020"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/breakdownPreviewControls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/breakdown_monthly_preview"
+                        android:textColor="@color/breakdown_secondary_ink"
+                        android:textSize="13sp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/breakdownTodayButton"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/breakdown_today"
+                        android:textAllCaps="false"
+                        android:textColor="@color/breakdown_button_green" />
+                </LinearLayout>
+
+                <com.example.myapplication.TimelineMilestonesLayout
+                    android:id="@+id/breakdownTimeline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.slider.Slider
+                    android:id="@+id/breakdownDateSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/breakdown_slider_description"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    app:thumbColor="@color/app_slider_active"
+                    app:trackColorActive="@color/app_slider_active"
+                    app:trackColorInactive="@color/app_slider_inactive"
+                    app:tickVisible="false" />
+
+                </com.example.myapplication.TimelineMilestonesLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/breakdownRangeStart"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/breakdown_secondary_ink"
+                        android:textSize="12sp"
+                        tools:text="Start: Jun 20, 2018" />
+                    <TextView
+                        android:id="@+id/breakdownRangeEnd"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textColor="@color/breakdown_secondary_ink"
+                        android:textSize="12sp"
+                        tools:text="End: Oct 5, 2026" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/breakdownStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="24dp"
+                android:accessibilityLiveRegion="polite"
+                android:text="@string/breakdown_loading"
+                android:textColor="@color/breakdown_ink"
+                android:textSize="16sp"
+                tools:visibility="gone" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/breakdownCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/breakdown_surface"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="1dp"
+                app:strokeColor="@color/breakdown_rule"
+                app:strokeWidth="1dp"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/profile_breakdown_title"
+                        android:textColor="@color/breakdown_ink"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <!-- Shared with the popup; every table value remains a separate TextView. -->
+                    <include layout="@layout/view_sentence_breakdown" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

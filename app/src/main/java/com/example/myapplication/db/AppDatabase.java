@@ -6,7 +6,8 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {User.class, Profile.class}, version=4)
+// Development schema reset: clear the old app storage before using version 6.
+@Database(entities = {User.class, Profile.class, ProfileCharge.class}, version=6)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract UserDao UserDao();

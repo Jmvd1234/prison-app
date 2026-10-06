@@ -34,6 +34,9 @@
             android:theme="@style/Theme.MyApplication"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".BreakdownActivity"
+            android:exported="false" />
+        <activity
             android:name=".DashboardActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

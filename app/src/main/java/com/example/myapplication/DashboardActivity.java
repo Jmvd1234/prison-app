@@ -3,10 +3,12 @@ package com.example.myapplication;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,18 +23,36 @@ import com.example.myapplication.db.Profile;
 import com.example.myapplication.db.ProfileDao;
 
 import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.time.temporal.ChronoUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class DashboardActivity extends AppCompatActivity {
 
-    AppDatabase db;
+    private static final String TAG =
+            "DashboardActivity";
+
+
+    // Keep dropdown labels in constants so the dropdown
+    // and sorting logic can never use different wording.
+    private static final String SORT_FIRST_NAME =
+            "First Name";
+
+    private static final String SORT_LAST_NAME =
+            "Last Name";
+
+    private static final String SORT_MIN_TIME =
+            "Minimum Time Remaining";
+
+    private static final String SORT_MAX_TIME =
+            "Maximum Time Remaining";
+
+    private static final String SORT_ARREST_DATE =
+            "LEA Arrest Date";
+
+
     ProfileDao profileDao;
     SharedPreferences sp;
 
@@ -45,42 +65,88 @@ public class DashboardActivity extends AppCompatActivity {
     Spinner orderDropdown;
 
 
-    // Format used by the dates stored from newEntryActivity
-    private final DateTimeFormatter dateFormatter =
-            DateTimeFormatter.ofPattern(
-                    "MMM d, uuuu",
-                    Locale.US
-            );
+    /*
+     * Room loading + calculation happens away from the UI thread.
+     */
+    private final ExecutorService executor =
+            Executors.newSingleThreadExecutor();
+
+
+    /*
+     * Used so an old asynchronous load cannot overwrite
+     * a newer Dashboard refresh.
+     */
+    private int loadGeneration = 0;
+    private final TodayDateObserver dateObserver = new TodayDateObserver(this, this::setUpProfileModels);
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(
+            Bundle savedInstanceState) {
 
-        super.onCreate(savedInstanceState);
+        super.onCreate(
+                savedInstanceState
+        );
+
+
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_dashboard);
+
+        setContentView(
+                R.layout.activity_dashboard
+        );
+
+
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.main),
                 (v, insets) -> {
-                    Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                    v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+
+                    Insets systemBars =
+                            insets.getInsets(
+                                    WindowInsetsCompat.Type.systemBars()
+                            );
+
+
+                    v.setPadding(
+                            systemBars.left,
+                            systemBars.top,
+                            systemBars.right,
+                            systemBars.bottom
+                    );
+
+
                     return insets;
-                });
+                }
+        );
 
 
-        db = AppDatabase.getInstance(getApplicationContext());
+        // =====================================================
+        // DATABASE + USER SESSION
+        // =====================================================
 
-        profileDao = db.ProfileDao();
+        profileDao =
+                AppDatabase
+                        .getInstance(
+                                getApplicationContext()
+                        )
+                        .ProfileDao();
 
-        sp = getSharedPreferences("user_session", Context.MODE_PRIVATE);
+
+        sp =
+                getSharedPreferences(
+                        "user_session",
+                        Context.MODE_PRIVATE
+                );
 
 
+        // =====================================================
+        // RECYCLER VIEW
+        // =====================================================
 
-        //setting up the recycler view
         RecyclerView recyclerView =
                 findViewById(
                         R.id.profileRecyclerView
                 );
+
 
         adapter =
                 new Profile_RecyclerViewAdapter(
@@ -88,18 +154,28 @@ public class DashboardActivity extends AppCompatActivity {
                         profileModels
                 );
 
-        recyclerView.setAdapter(adapter);
 
-        recyclerView.setLayoutManager(
-                new LinearLayoutManager(this)
+        recyclerView.setAdapter(
+                adapter
         );
 
 
-        //setting up dropdowns
+        recyclerView.setLayoutManager(
+                new LinearLayoutManager(
+                        this
+                )
+        );
+
+
+        // =====================================================
+        // SORT DROPDOWNS
+        // =====================================================
+
         sortDropdown =
                 findViewById(
                         R.id.sortDropdown
                 );
+
 
         orderDropdown =
                 findViewById(
@@ -108,11 +184,11 @@ public class DashboardActivity extends AppCompatActivity {
 
 
         String[] sortOptions = {
-                "First Name",
-                "Last Name",
-                "Min.Time Remaining",
-                "Max. Time Remaining",
-                "LEA Arrest Date"
+                SORT_FIRST_NAME,
+                SORT_LAST_NAME,
+                SORT_MIN_TIME,
+                SORT_MAX_TIME,
+                SORT_ARREST_DATE
         };
 
 
@@ -122,40 +198,24 @@ public class DashboardActivity extends AppCompatActivity {
         };
 
 
-        ArrayAdapter<String> sortAdapter =
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_spinner_item,
-                        sortOptions
-                );
-
-        sortAdapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item
-        );
-
-        sortDropdown.setAdapter(
-                sortAdapter
+        setSpinnerOptions(
+                sortDropdown,
+                sortOptions
         );
 
 
-        ArrayAdapter<String> orderAdapter =
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_spinner_item,
-                        orderOptions
-                );
-
-        orderAdapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item
-        );
-
-        orderDropdown.setAdapter(
-                orderAdapter
+        setSpinnerOptions(
+                orderDropdown,
+                orderOptions
         );
 
 
-        // Re-sort immediately whenever either dropdown changes
-        sortDropdown.setOnItemSelectedListener(
+        /*
+         * Whenever either Spinner changes,
+         * simply re-sort the existing model list.
+         */
+
+        AdapterView.OnItemSelectedListener sortListener =
                 new AdapterView.OnItemSelectedListener() {
 
                     @Override
@@ -168,556 +228,370 @@ public class DashboardActivity extends AppCompatActivity {
                         updateSort();
                     }
 
+
                     @Override
                     public void onNothingSelected(
                             AdapterView<?> parent) {
                     }
-                }
+                };
+
+
+        sortDropdown.setOnItemSelectedListener(
+                sortListener
         );
 
 
         orderDropdown.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
-
-                    @Override
-                    public void onItemSelected(
-                            AdapterView<?> parent,
-                            View view,
-                            int position,
-                            long id) {
-
-                        updateSort();
-                    }
-
-                    @Override
-                    public void onNothingSelected(
-                            AdapterView<?> parent) {
-                    }
-                }
+                sortListener
         );
     }
 
 
+    // =========================================================
+    // SPINNER SETUP
+    // =========================================================
+
+    private void setSpinnerOptions(
+            Spinner spinner,
+            String[] options) {
+
+        ArrayAdapter<String> spinnerAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        options
+                );
+
+
+        spinnerAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+
+        spinner.setAdapter(
+                spinnerAdapter
+        );
+    }
+
+
+    // =========================================================
+    // HOME
+    // =========================================================
+
     public void goHome(View v) {
+
         finish();
     }
 
 
-    //setting up profile list
+    // =========================================================
+    // LOAD + CALCULATE PROFILE CARDS
+    // =========================================================
 
     private void setUpProfileModels() {
+        final LocalDate calculationDate = LocalDate.now();
 
-        List<Profile> profileList = profileDao.getProfilesByUserID(sp.getLong("currentUserID", -1));
-
-
-        for (Profile profile : profileList) {
-
-
-            //dates
-            LocalDate observationDate =
-                    stringToDate(
-                            profile.observationDate
-                    );
-
-            LocalDate leaArrestDate =
-                    stringToDate(
-                            profile.leaArrestDate
-                    );
-
-            LocalDate commitmentDate =
-                    stringToDate(
-                            profile.commitmentDate
-                    );
-
-            long leaDays =
-                    ChronoUnit.DAYS.between(
-                            leaArrestDate,
-                            commitmentDate
-                    );
-            //this is to get exact days between the two dates
-            //so that there's no weird leap year stuff
+        long currentUserID =
+                sp.getLong(
+                        "currentUserID",
+                        -1L
+                );
 
 
-            // BASE RELEASE DATES
-            // Uses the anniversary method:
-            // years -> months -> days
+        /*
+         * Each load gets its own generation number.
+         *
+         * If the Activity refreshes again before this one
+         * finishes, the older result is ignored.
+         */
 
-            LocalDate minimumBaseReleaseDate =
-                    calculateBaseReleaseDate(
-                            commitmentDate,
-                            leaDays,
-                            profile.minYears,
-                            profile.minMonths,
-                            profile.minDays
-                    );
+        final int generation =
+                ++loadGeneration;
 
 
-            LocalDate maximumBaseReleaseDate =
-                    calculateBaseReleaseDate(
-                            commitmentDate,
-                            leaDays,
-                            profile.maxYears,
-                            profile.maxMonths,
-                            profile.maxDays
-                    );
+        if (currentUserID == -1L) {
+
+            profileModels.clear();
+
+            adapter.notifyDataSetChanged();
 
 
-            //calc whole months elapsed (for GCTA and TASTM)
-            long wholeMonthsElapsed =
-                    getWholeMonthsElapsed(
-                            commitmentDate,
-                            observationDate
-                    );
+            Toast.makeText(
+                    this,
+                    "Please sign in again.",
+                    Toast.LENGTH_LONG
+            ).show();
 
 
-            //calculating deductions
-            long tastmDays = calculateTASTM(wholeMonthsElapsed);
-
-            long gctaDays = calculateGCTA(wholeMonthsElapsed);
+            return;
+        }
 
 
-            long totalAllowanceDays = tastmDays + gctaDays;
+        executor.execute(() -> {
+
+            try {
+
+                List<Profile> storedProfiles =
+                        profileDao.getProfilesByUserID(
+                                currentUserID
+                        );
 
 
-            //Days added back
-            // These increase the amount of time before release.
-
-            long addedDays = (long) profile.deductionDays + profile.timeGapDays;
+                ArrayList<profileModel> loadedModels =
+                        new ArrayList<>();
 
 
-            //adjusted release dates
-            LocalDate minimumReleaseDate =
-                    minimumBaseReleaseDate
-                            // Allowances shorten the sentence
-                            .minusDays(
-                                    totalAllowanceDays
-                            )
-                            // These extend the sentence
-                            .plusDays(
-                                    addedDays
-                            );
+                for (Profile profile : storedProfiles) {
 
-            LocalDate maximumReleaseDate =
-                    maximumBaseReleaseDate
-                            //same calculations here
-                            .minusDays(
-                                    totalAllowanceDays
-                            )
-                            .plusDays(
-                                    addedDays
+                    // =========================================
+                    // CONVERT ROOM PROFILE → CALCULATOR INPUT
+                    // =========================================
+
+                    SentenceCalculator.Input input =
+                            ProfileCalculationMapper.from(profile, calculationDate);
+
+
+                    // =========================================
+                    // RUN THE SINGLE CENTRAL CALCULATOR
+                    // =========================================
+
+                    SentenceCalculator.Result result =
+                            SentenceCalculator.calculate(
+                                    input
                             );
 
 
-            //get the time remaining for both measurements
-            String minimumTimeRemaining =
-                    getTimeRemaining(
-                            observationDate,
-                            minimumReleaseDate
+                    String minimumTimeRemaining =
+                            "N/A";
+
+                    String maximumTimeRemaining =
+                            "N/A";
+
+
+                    /*
+                     * Only generate the formatted Y/M/D text
+                     * when the calculator says that the result
+                     * is actually available.
+                     */
+
+                    if (result.available) {
+
+                        LocalDate observationDate = calculationDate;
+
+
+                        minimumTimeRemaining =
+                                result.minimumText(
+                                        observationDate
+                                );
+
+
+                        maximumTimeRemaining =
+                                result.maximumText(
+                                        observationDate
+                                );
+                    }
+
+
+                    // Use the same trigger meaning and recovered date as the form.
+
+                    boolean showPrisonCommitmentLabel =
+                            SentenceCalculator.usesPrisonCommitment(
+                                    profile.notCommittedToJail, profile.disqualifiedForCPI);
+
+
+                    String displayedCommitmentDate =
+                            isBlank(
+                                    ProfileCalculationMapper.commitmentDate(profile)
+                            )
+                                    ? "Not entered"
+                                    : ProfileCalculationMapper.commitmentDate(profile);
+
+
+                    // =========================================
+                    // CREATE NORMAL RECYCLER VIEW MODEL
+                    // =========================================
+
+                    profileModel model =
+                            new profileModel(
+
+                                    profile.profileID,
+
+                                    profile.firstName,
+                                    profile.lastName,
+
+                                    profile.leaArrestDate,
+
+                                    displayedCommitmentDate,
+                                    showPrisonCommitmentLabel,
+
+                                    minimumTimeRemaining,
+                                    maximumTimeRemaining,
+
+                                    /*
+                                     * When unavailable these are just
+                                     * placeholders.
+                                     *
+                                     * The adapter checks calculationAvailable
+                                     * before displaying them.
+                                     */
+                                    result.available
+                                            ? result.minRemainingDays
+                                            : 0L,
+
+                                    result.available
+                                            ? result.maxRemainingDays
+                                            : 0L,
+
+                                    result.actionText(),
+
+                                    R.drawable.profile_placeholder
+                            );
+
+
+                    // =========================================
+                    // ATTACH EXTRA CALCULATION DISPLAY DATA
+                    // =========================================
+
+                    model.setCalculationAvailable(
+                            result.available
                     );
 
 
-            String maximumTimeRemaining =
-                    getTimeRemaining(
-                            observationDate,
-                            maximumReleaseDate
+                    model.setMinimumExactDays(
+                            result.available
+                                    ? SentenceCalculator.exactDays(
+                                    result.minRemainingFifths
+                            )
+                                    : "N/A"
                     );
 
 
-            //using days remaining to sort easier later
-            long minimumRemainingDays =
-                    getRemainingDays(
-                            observationDate,
-                            minimumReleaseDate
+                    model.setMaximumExactDays(
+                            result.available
+                                    ? SentenceCalculator.exactDays(
+                                    result.maxRemainingFifths
+                            )
+                                    : "N/A"
                     );
 
 
-            long maximumRemainingDays =
-                    getRemainingDays(
-                            observationDate,
-                            maximumReleaseDate
+                    model.setCalculationNotes(
+                            joinNotes(
+                                    result.notes
+                            )
                     );
 
 
-            //getting suggested action based on number of days
-            String suggestedAction =
-                    getSuggestedAction(
-                            minimumRemainingDays,
-                            maximumRemainingDays
+                    loadedModels.add(
+                            model
+                    );
+                }
+
+
+                // =============================================
+                // UPDATE THE UI
+                // =============================================
+
+                runOnUiThread(() -> {
+
+                    /*
+                     * Do nothing if this Activity is gone
+                     * or a newer load has already begun.
+                     */
+
+                    if (isFinishing()
+                            || isDestroyed()
+                            || generation != loadGeneration) {
+
+                        return;
+                    }
+
+
+                    profileModels.clear();
+
+                    profileModels.addAll(
+                            loadedModels
                     );
 
 
-            // -------------------------
-            // CREATE RECYCLER VIEW MODEL
-            // -------------------------
+                    updateSort();
+                });
 
-            profileModels.add(
-                    new profileModel(
+            }
 
-                            profile.profileID,
+            catch (Exception e) {
 
-                            profile.firstName,
-                            profile.lastName,
+                /*
+                 * Don't put names/custody details into Logcat.
+                 */
 
-                            profile.leaArrestDate,
+                Log.e(
+                        TAG,
+                        "Unable to load dashboard",
+                        e
+                );
 
-                            profile.commitmentDate,
-                            profile.notCommittedToJail,
 
-                            minimumTimeRemaining,
-                            maximumTimeRemaining,
+                runOnUiThread(() -> {
 
-                            minimumRemainingDays,
-                            maximumRemainingDays,
+                    if (isFinishing()
+                            || isDestroyed()
+                            || generation != loadGeneration) {
 
-                            suggestedAction,
+                        return;
+                    }
 
-                            R.drawable.profile_placeholder
-                    )
+
+                    profileModels.clear();
+
+                    adapter.notifyDataSetChanged();
+
+
+                    Toast.makeText(
+                            this,
+                            "Could not load profiles. Check the saved profile data.",
+                            Toast.LENGTH_LONG
+                    ).show();
+                });
+            }
+        });
+    }
+
+
+    // =========================================================
+    // NOTES → SINGLE DISPLAY STRING
+    // =========================================================
+
+    private String joinNotes(
+            List<String> notes) {
+
+        StringBuilder text =
+                new StringBuilder();
+
+
+        for (String note : notes) {
+
+            if (text.length() > 0) {
+
+                text.append("\n");
+            }
+
+
+            text.append(
+                    note
             );
         }
+
+
+        return text.toString();
     }
 
 
-    // =========================================================
-    // DATE CONVERSION
-    // =========================================================
-
-    private LocalDate stringToDate(
-            String date) {
-
-        return LocalDate.parse(
-                date,
-                dateFormatter
-        );
-    }
-
-
-    // =========================================================
-    // BASE RELEASE DATE
-    // =========================================================
-
-    private LocalDate calculateBaseReleaseDate(
-            LocalDate commitmentDate,
-            long leaDays,
-            int years,
-            int months,
-            int days) {
-
-        /*
-         * Anniversary method.
-         *
-         * Example:
-         *
-         * Sep 20, 2026 + 1 year
-         * becomes Sep 20, 2027,
-         *
-         * rather than simply adding 365 days.
-         */
-
-        return commitmentDate
-                .plusYears(years)
-                .plusMonths(months)
-                .plusDays(days)
-                .minusDays(leaDays);
-    }
-
-
-    // =========================================================
-    // WHOLE MONTHS ELAPSED
-    // =========================================================
-
-    private long getWholeMonthsElapsed(
-            LocalDate commitmentDate,
-            LocalDate observationDate) {
-
-        /*
-         * If the observation date is before commitment,
-         * no allowance months have elapsed yet.
-         */
-
-        if (observationDate.isBefore(
-                commitmentDate)) {
-
-            return 0;
-        }
-
-
-        /*
-         * First calculate the rough difference
-         * in calendar months.
-         */
-
-        long months =
-                (
-                        observationDate.getYear()
-                                - commitmentDate.getYear()
-                ) * 12L
-
-                        + observationDate.getMonthValue()
-                        - commitmentDate.getMonthValue();
-
-
-        /*
-         * Then check whether the anniversary for
-         * that month has actually occurred.
-         *
-         * Example:
-         *
-         * Jan 15 -> Feb 14
-         * = 0 complete months
-         *
-         * Jan 15 -> Feb 15
-         * = 1 complete month
-         */
-
-        LocalDate anniversary =
-                commitmentDate.plusMonths(
-                        months
-                );
-
-
-        if (anniversary.isAfter(
-                observationDate)) {
-
-            months--;
-        }
-
-
-        return Math.max(
-                months,
-                0
-        );
-    }
-
-
-    // =========================================================
-    // TASTM
-    // =========================================================
-
-    private long calculateTASTM(
-            long wholeMonthsElapsed) {
-
-        /*
-         * Current app model:
-         *
-         * 15 days of TASTM for every complete
-         * qualifying month.
-         */
-
-        return wholeMonthsElapsed * 15;
-    }
-
-
-    // =========================================================
-    // GCTA
-    // =========================================================
-
-    private long calculateGCTA(
-            long wholeMonthsElapsed) {
-
-        long monthsRemaining =
-                wholeMonthsElapsed;
-
-        long gctaDays = 0;
-
-
-        // -------------------------
-        // MONTHS 1 - 24
-        // 20 days per month
-        // -------------------------
-
-        long firstTier =
-                Math.min(
-                        monthsRemaining,
-                        24
-                );
-
-        gctaDays +=
-                firstTier * 20;
-
-        monthsRemaining -=
-                firstTier;
-
-
-        // -------------------------
-        // MONTHS 25 - 60
-        // 23 days per month
-        // -------------------------
-
-        if (monthsRemaining > 0) {
-
-            // Months 25 through 60
-            // = 36 months total
-
-            long secondTier =
-                    Math.min(
-                            monthsRemaining,
-                            36
-                    );
-
-            gctaDays +=
-                    secondTier * 23;
-
-            monthsRemaining -=
-                    secondTier;
-        }
-
-
-        // -------------------------
-        // MONTHS 61 - 120
-        // 25 days per month
-        // -------------------------
-
-        if (monthsRemaining > 0) {
-
-            // Months 61 through 120
-            // = 60 months total
-
-            long thirdTier =
-                    Math.min(
-                            monthsRemaining,
-                            60
-                    );
-
-            gctaDays +=
-                    thirdTier * 25;
-
-            monthsRemaining -=
-                    thirdTier;
-        }
-
-
-        // -------------------------
-        // MONTH 121 ONWARDS
-        // 30 days per month
-        // -------------------------
-
-        if (monthsRemaining > 0) {
-
-            gctaDays +=
-                    monthsRemaining * 30;
-        }
-
-
-        return gctaDays;
-    }
-
-
-    // =========================================================
-    // DISPLAYED SIGNED TIME REMAINING
-    // =========================================================
-
-    private String getTimeRemaining(
-            LocalDate observationDate,
-            LocalDate releaseDate) {
-
-        boolean overdue =
-                releaseDate.isBefore(
-                        observationDate
-                );
-
-
-        Period difference;
-
-
-        /*
-         * Period.between() works best when the
-         * earlier date is supplied first.
-         *
-         * We therefore reverse the dates for
-         * overdue profiles and add the negative
-         * sign ourselves.
-         */
-
-        if (overdue) {
-
-            difference =
-                    Period.between(
-                            releaseDate,
-                            observationDate
-                    );
-        }
-
-        else {
-
-            difference =
-                    Period.between(
-                            observationDate,
-                            releaseDate
-                    );
-        }
-
-
-        String sign =
-                overdue ? "-" : "";
-
-
-        return sign
-                + difference.getYears() + "y, "
-                + difference.getMonths() + "m, "
-                + difference.getDays() + "d";
-    }
-
-
-    // =========================================================
-    // NUMERIC SIGNED TIME REMAINING
-    // =========================================================
-
-    private long getRemainingDays(
-            LocalDate observationDate,
-            LocalDate releaseDate) {
-
-        /*
-         * ChronoUnit returns:
-         *
-         * positive -> future release
-         * zero     -> release today
-         * negative -> overdue
-         */
-
-        return ChronoUnit.DAYS.between(
-                observationDate,
-                releaseDate
-        );
-    }
-
-
-    // =========================================================
-    // SUGGESTED ACTION
-    // =========================================================
-
-    private String getSuggestedAction(
-            long minimumRemainingDays,
-            long maximumRemainingDays) {
-
-        /*
-         * These are workflow suggestions only.
-         *
-         * Maximum <= 0:
-         * both estimated dates have passed.
-         *
-         * Minimum <= 0 but Maximum > 0:
-         * profile is somewhere between the two
-         * calculated limits.
-         *
-         * Otherwise:
-         * neither calculated date has arrived.
-         */
-
-        if (maximumRemainingDays <= 0) {
-
-            return "Contact Authorities";
-        }
-
-        else if (minimumRemainingDays <= 0) {
-
-            return "Review Case";
-        }
-
-        else {
-
-            return "Stand By";
-        }
+    private boolean isBlank(
+            String value) {
+
+        return value == null
+                || value.trim().isEmpty();
     }
 
 
@@ -732,21 +606,18 @@ public class DashboardActivity extends AppCompatActivity {
 
 
         /*
-         * Reload the Room data every time the user
-         * comes back to Dashboard.
+         * Re-read Room and recalculate whenever the user
+         * returns from creating/editing a profile.
          */
-
-        profileModels.clear();
 
         setUpProfileModels();
+        dateObserver.start();
+    }
 
-
-        /*
-         * Reapply whatever sorting options
-         * are currently selected.
-         */
-
-        updateSort();
+    @Override
+    protected void onPause() {
+        dateObserver.stop();
+        super.onPause();
     }
 
 
@@ -754,179 +625,259 @@ public class DashboardActivity extends AppCompatActivity {
     // BUBBLE SORT
     // =========================================================
 
-    private ArrayList<profileModel> sortProfileModels(
-            ArrayList<profileModel> profilesList,
+    private void sortProfileModels(
             String sortType,
-            String order) {
+            boolean ascending) {
 
+        boolean sortingByTime =
+                SORT_MIN_TIME.equals(
+                        sortType
+                )
+                        || SORT_MAX_TIME.equals(
+                        sortType
+                );
 
-        /*
-         * Bubble sort:
-         *
-         * repeatedly compare adjacent items and
-         * swap them if they are in the wrong order.
-         */
 
         for (int i = 0;
-             i < profilesList.size() - 1;
+             i < profileModels.size() - 1;
              i++) {
 
 
             for (int j = 0;
-                 j < profilesList.size() - i - 1;
+                 j < profileModels.size() - i - 1;
                  j++) {
 
 
                 profileModel first =
-                        profilesList.get(j);
+                        profileModels.get(j);
 
                 profileModel second =
-                        profilesList.get(j + 1);
+                        profileModels.get(j + 1);
 
-
-                /*
-                 * All comparison types are converted
-                 * into the same convention:
-                 *
-                 * negative -> first comes before second
-                 * zero     -> equal
-                 * positive -> first comes after second
-                 */
-
-                int comparisonResult = 0;
-
-
-                // -------------------------
-                // FIRST NAME
-                // -------------------------
-
-                if (sortType.equals(
-                        "First Name")) {
-
-                    comparisonResult =
-                            first.getFirstName()
-                                    .compareToIgnoreCase(
-                                            second.getFirstName()
-                                    );
-                }
-
-
-                // -------------------------
-                // LAST NAME
-                // -------------------------
-
-                else if (sortType.equals(
-                        "Last Name")) {
-
-                    comparisonResult =
-                            first.getLastName()
-                                    .compareToIgnoreCase(
-                                            second.getLastName()
-                                    );
-                }
-
-
-                // -------------------------
-                // MINIMUM TIME REMAINING
-                // -------------------------
-
-                else if (sortType.equals(
-                        "Minimum Time Remaining")) {
-
-                    comparisonResult =
-                            Long.compare(
-                                    first.getMinRemainingDays(),
-                                    second.getMinRemainingDays()
-                            );
-                }
-
-
-                // -------------------------
-                // MAXIMUM TIME REMAINING
-                // -------------------------
-
-                else if (sortType.equals(
-                        "Maximum Time Remaining")) {
-
-                    comparisonResult =
-                            Long.compare(
-                                    first.getMaxRemainingDays(),
-                                    second.getMaxRemainingDays()
-                            );
-                }
-
-
-                // -------------------------
-                // LEA ARREST DATE
-                // -------------------------
-
-                else if (sortType.equals(
-                        "LEA Arrest Date")) {
-
-                    LocalDate firstDate =
-                            stringToDate(
-                                    first.getLEAArrestDate()
-                            );
-
-
-                    LocalDate secondDate =
-                            stringToDate(
-                                    second.getLEAArrestDate()
-                            );
-
-
-                    comparisonResult =
-                            firstDate.compareTo(
-                                    secondDate
-                            );
-                }
-
-
-                // -------------------------
-                // ASCENDING / DESCENDING
-                // -------------------------
 
                 boolean shouldSwap;
 
 
-                if (order.equals(
-                        "Ascending")) {
+                /*
+                 * A profile with unavailable calculations
+                 * always stays at the bottom for time sorts.
+                 *
+                 * This prevents an N/A profile's placeholder
+                 * zero value from sorting as if it were real.
+                 */
+
+                if (sortingByTime
+                        && first.isCalculationAvailable()
+                        != second.isCalculationAvailable()) {
+
 
                     shouldSwap =
-                            comparisonResult > 0;
+                            !first.isCalculationAvailable();
                 }
 
                 else {
 
-                    shouldSwap =
-                            comparisonResult < 0;
+                    int comparisonResult =
+                            compareProfiles(
+                                    first,
+                                    second,
+                                    sortType
+                            );
+
+
+                    if (ascending) {
+
+                        shouldSwap =
+                                comparisonResult > 0;
+                    }
+
+                    else {
+
+                        shouldSwap =
+                                comparisonResult < 0;
+                    }
                 }
 
 
-                // -------------------------
-                // SWAP
-                // -------------------------
-
                 if (shouldSwap) {
 
-                    profileModel temp =
-                            profilesList.get(j);
+                    profileModel temporary =
+                            profileModels.get(j);
 
-                    profilesList.set(
+
+                    profileModels.set(
                             j,
-                            profilesList.get(j + 1)
+                            profileModels.get(j + 1)
                     );
 
-                    profilesList.set(
+
+                    profileModels.set(
                             j + 1,
-                            temp
+                            temporary
                     );
                 }
             }
         }
+    }
 
 
-        return profilesList;
+    // =========================================================
+    // PROFILE COMPARISON
+    // =========================================================
+
+    private int compareProfiles(
+            profileModel first,
+            profileModel second,
+            String sortType) {
+
+
+        switch (sortType) {
+
+
+            case SORT_FIRST_NAME:
+
+                return safe(
+                        first.getFirstName()
+                ).compareToIgnoreCase(
+                        safe(
+                                second.getFirstName()
+                        )
+                );
+
+
+            case SORT_LAST_NAME:
+
+                return safe(
+                        first.getLastName()
+                ).compareToIgnoreCase(
+                        safe(
+                                second.getLastName()
+                        )
+                );
+
+
+            case SORT_MIN_TIME:
+
+                /*
+                 * If either calculation is unavailable,
+                 * the caller already handles its position.
+                 */
+
+                if (!first.isCalculationAvailable()
+                        || !second.isCalculationAvailable()) {
+
+                    return 0;
+                }
+
+
+                /*
+                 * Compare exact decimal day values.
+                 *
+                 * This matters when four-fifths CPI produces
+                 * fractional credited-day balances.
+                 */
+
+                return new java.math.BigDecimal(
+                        first.getMinimumExactDays()
+                ).compareTo(
+                        new java.math.BigDecimal(
+                                second.getMinimumExactDays()
+                        )
+                );
+
+
+            case SORT_MAX_TIME:
+
+                if (!first.isCalculationAvailable()
+                        || !second.isCalculationAvailable()) {
+
+                    return 0;
+                }
+
+
+                return new java.math.BigDecimal(
+                        first.getMaximumExactDays()
+                ).compareTo(
+                        new java.math.BigDecimal(
+                                second.getMaximumExactDays()
+                        )
+                );
+
+
+            case SORT_ARREST_DATE:
+
+                LocalDate firstDate =
+                        parseDateForSort(
+                                first.getLEAArrestDate()
+                        );
+
+
+                LocalDate secondDate =
+                        parseDateForSort(
+                                second.getLEAArrestDate()
+                        );
+
+
+                if (firstDate == null
+                        && secondDate == null) {
+
+                    return 0;
+                }
+
+
+                if (firstDate == null) {
+
+                    return 1;
+                }
+
+
+                if (secondDate == null) {
+
+                    return -1;
+                }
+
+
+                return firstDate.compareTo(
+                        secondDate
+                );
+
+
+            default:
+
+                return 0;
+        }
+    }
+
+
+    // =========================================================
+    // DATE PARSING FOR SORT
+    // =========================================================
+
+    private LocalDate parseDateForSort(
+            String value) {
+
+        try {
+
+            return SentenceCalculator.optionalDate(
+                    value,
+                    "Arrest date"
+            );
+
+        }
+
+        catch (IllegalArgumentException e) {
+
+            return null;
+        }
+    }
+
+
+    private String safe(
+            String value) {
+
+        return value == null
+                ? ""
+                : value;
     }
 
 
@@ -936,10 +887,15 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void updateSort() {
 
-        /*
-         * Both dropdown selections are read every
-         * time either Spinner changes.
-         */
+        if (adapter == null
+                || sortDropdown == null
+                || orderDropdown == null
+                || sortDropdown.getSelectedItem() == null
+                || orderDropdown.getSelectedItem() == null) {
+
+            return;
+        }
+
 
         String sortType =
                 sortDropdown
@@ -947,24 +903,43 @@ public class DashboardActivity extends AppCompatActivity {
                         .toString();
 
 
-        String order =
-                orderDropdown
-                        .getSelectedItem()
-                        .toString();
+        boolean ascending =
+                "Ascending".equals(
+                        orderDropdown
+                                .getSelectedItem()
+                                .toString()
+                );
 
 
         sortProfileModels(
-                profileModels,
                 sortType,
-                order
+                ascending
         );
 
 
+        adapter.notifyDataSetChanged();
+    }
+
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
+
+    @Override
+    protected void onDestroy() {
+        dateObserver.stop();
+
         /*
-         * The same ArrayList object has been
-         * reordered, so tell RecyclerView to redraw.
+         * Any result from an older load should no longer
+         * be allowed to update this Activity.
          */
 
-        adapter.notifyDataSetChanged();
+        ++loadGeneration;
+
+
+        executor.shutdown();
+
+
+        super.onDestroy();
     }
 }

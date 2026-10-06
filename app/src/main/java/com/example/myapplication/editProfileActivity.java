@@ -6,7 +6,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,24 +18,19 @@ import com.example.myapplication.db.AppDatabase;
 import com.example.myapplication.db.Profile;
 import com.example.myapplication.db.ProfileDao;
 import com.google.android.material.datepicker.MaterialDatePicker;
-import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Locale;
+
 
 public class editProfileActivity extends AppCompatActivity {
 
     EditText inputFirstName;
     EditText inputLastName;
 
-    EditText inputObservationDate;
     EditText inputLEADate;
-    EditText inputCommitmentDate;
 
     EditText inputMinYears;
     EditText inputMinMonths;
@@ -51,12 +45,6 @@ public class editProfileActivity extends AppCompatActivity {
 
     Spinner inputSTAL;
 
-    MaterialSwitch committedSwitch;
-    MaterialSwitch disqualifiedCPISwitch;
-    MaterialSwitch disqualifiedTASwitch;
-
-    TextView commitmentDateLabel;
-
     Button saveEntryButton;
     Button deleteEntryButton;
 
@@ -68,437 +56,790 @@ public class editProfileActivity extends AppCompatActivity {
     int profileID;
     Profile profile;
 
-    DateTimeFormatter dateFormatter =
-            DateTimeFormatter.ofPattern(
-                    "MMM d, uuuu",
-                    Locale.US
-            );
+    // Shared website-style switches, commitment date and optional conviction date.
+    private TriggerFormController triggerController;
+    private AdditionalChargesController additionalChargesController;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
+
         setContentView(R.layout.activity_edit_profile);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        layout =
+                findViewById(R.id.main);
 
 
-        profileID = getIntent().getIntExtra("profileID", -1);
-        //storing the profileID transferred from the recyclerview
+        ViewCompat.setOnApplyWindowInsetsListener(
+                layout,
+                (v, insets) -> {
+
+                    Insets systemBars =
+                            insets.getInsets(
+                                    WindowInsetsCompat.Type.systemBars()
+                            );
+
+                    v.setPadding(
+                            systemBars.left,
+                            systemBars.top,
+                            systemBars.right,
+                            systemBars.bottom
+                    );
+
+                    return insets;
+                }
+        );
+
+
+        // =====================================================
+        // PROFILE ID
+        // =====================================================
+
+        /*
+         * The RecyclerView sends the Profile's ID when
+         * its image is clicked.
+         */
+
+        profileID =
+                getIntent().getIntExtra(
+                        "profileID",
+                        -1
+                );
+
 
         if (profileID == -1) {
+
             finish();
             return;
         }
 
 
-        inputFirstName = findViewById(R.id.inputFirstName);
-        inputLastName = findViewById(R.id.inputLastName);
+        // =====================================================
+        // NORMAL FORM INPUTS
+        // =====================================================
 
-        inputObservationDate = findViewById(R.id.inputObservationDate);
-        inputLEADate = findViewById(R.id.inputLEADate);
-        inputCommitmentDate = findViewById(R.id.inputCommitmentDate);
+        inputFirstName =
+                findViewById(R.id.inputFirstName);
 
-        inputMinYears = findViewById(R.id.inputMinYears);
-        inputMinMonths = findViewById(R.id.inputMinMonths);
-        inputMinDays = findViewById(R.id.inputMinDays);
-
-        inputMaxYears = findViewById(R.id.inputMaxYears);
-        inputMaxMonths = findViewById(R.id.inputMaxMonths);
-        inputMaxDays = findViewById(R.id.inputMaxDays);
-
-        inputDeductionRaw = findViewById(R.id.inputDeductionRaw);
-        inputTimeGap = findViewById(R.id.inputTimeGap);
-
-        inputSTAL = findViewById(R.id.inputSTAL);
-
-        committedSwitch = findViewById(R.id.committedSwitch);
-        disqualifiedCPISwitch = findViewById(R.id.disqualifiedCPISwitch);
-        disqualifiedTASwitch = findViewById(R.id.disqualifiedTASwitch);
-
-        commitmentDateLabel = findViewById(R.id.commitmentDateLabel);
-
-        saveEntryButton = findViewById(R.id.saveEntryButton);
-        deleteEntryButton = findViewById(R.id.deleteEntryButton);
-
-        layout = findViewById(R.id.main);
+        inputLastName =
+                findViewById(R.id.inputLastName);
 
 
-        db = AppDatabase.getInstance(this.getApplicationContext());
-        profileDao = db.ProfileDao();
+        inputLEADate =
+                findViewById(R.id.inputLEADate);
 
-        profile = profileDao.getProfileByProfileID(profileID);
+
+        inputMinYears =
+                findViewById(R.id.inputMinYears);
+
+        inputMinMonths =
+                findViewById(R.id.inputMinMonths);
+
+        inputMinDays =
+                findViewById(R.id.inputMinDays);
+
+
+        inputMaxYears =
+                findViewById(R.id.inputMaxYears);
+
+        inputMaxMonths =
+                findViewById(R.id.inputMaxMonths);
+
+        inputMaxDays =
+                findViewById(R.id.inputMaxDays);
+
+
+        inputDeductionRaw =
+                findViewById(R.id.inputDeductionRaw);
+
+        inputTimeGap =
+                findViewById(R.id.inputTimeGap);
+
+
+        inputSTAL =
+                findViewById(R.id.inputSTAL);
+
+
+        saveEntryButton =
+                findViewById(R.id.saveEntryButton);
+
+        deleteEntryButton =
+                findViewById(R.id.deleteEntryButton);
+
+
+        // =====================================================
+        // DATABASE
+        // =====================================================
+
+        db =
+                AppDatabase.getInstance(
+                        getApplicationContext()
+                );
+
+        profileDao =
+                db.ProfileDao();
+
+
+        profile =
+                profileDao.getProfileByProfileID(
+                        profileID
+                );
+
 
         if (profile == null) {
-            Snackbar.make(layout, "Profile could not be found!", Snackbar.LENGTH_LONG)
-                    .show();
+
+            Snackbar.make(
+                    layout,
+                    "Profile could not be found!",
+                    Snackbar.LENGTH_LONG
+            ).show();
 
             finish();
             return;
         }
 
 
-        //setting up the STAL dropdown
+        // =====================================================
+        // STAL DROPDOWN
+        // =====================================================
+
+        // The mapper passes the stored STAL selection to the calculator.
+
         String[] stalOptions = {
                 "None",
                 "Returned After a Disaster (20%)",
                 "Did Not Leave (40%)"
         };
 
-        ArrayAdapter<String> stalAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_item,
-                stalOptions
-        );
+
+        ArrayAdapter<String> stalAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        stalOptions
+                );
+
 
         stalAdapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item
         );
 
-        inputSTAL.setAdapter(stalAdapter);
 
-
-        //changes the commitment date label based on the toggle
-        committedSwitch.setOnCheckedChangeListener(
-                (buttonView, isChecked) -> {
-                    updateCommitmentLabel();
-                }
+        inputSTAL.setAdapter(
+                stalAdapter
         );
 
 
-        //if disqualified, STAL is not considered in the calculations
-        disqualifiedTASwitch.setOnCheckedChangeListener(
-                (buttonView, isChecked) -> {
-                    inputSTAL.setEnabled(!isChecked);
-                }
-        );
+        // =====================================================
+        // RESTORE ORDINARY PROFILE FIELDS
+        // =====================================================
 
+        /*
+         * On a fresh opening of the edit screen, populate
+         * the normal inputs from Room.
+         *
+         * If Android is recreating this Activity, allow
+         * its normal View-state restoration instead.
+         */
 
-        //Setting initial field values
         if (savedInstanceState == null) {
+
             populateFields();
         }
 
+        additionalChargesController = new AdditionalChargesController(
+                findViewById(R.id.additionalChargesContainer), findViewById(R.id.addChargeButton),
+                profile, savedInstanceState);
 
-        inputObservationDate.setOnClickListener(v -> {
-            showDatePickerDialog(
-                    inputObservationDate,
-                    "Select Observation Date"
-            );
-        });
+
+        // =====================================================
+        // TRIGGER CONTROLLER
+        // =====================================================
+
+        // The controller owns the three switches and the single conditional date field.
+
+        triggerController =
+                new TriggerFormController(
+                        this,
+                        findViewById(
+                                R.id.triggerDetailsContainer
+                        )
+                );
+
+
+        /*
+         * Unlike newEntryActivity, pass the existing
+         * Profile so the controller can restore all the
+         * trigger-related values stored in Room.
+         */
+
+        triggerController.load(
+                profile,
+                savedInstanceState
+        );
+
+
+        // =====================================================
+        // NORMAL DATE PICKERS
+        // =====================================================
+
+        /*
+         * Commitment date is deliberately NOT handled here.
+         *
+         * Its meaning can change between jail and prison,
+         * so TriggerFormController owns that picker.
+         */
 
         inputLEADate.setOnClickListener(v -> {
+
             showDatePickerDialog(
                     inputLEADate,
                     "Select LEA Arrest Date"
             );
         });
 
-        inputCommitmentDate.setOnClickListener(v -> {
-            showDatePickerDialog(
-                    inputCommitmentDate,
-                    commitmentDateLabel.getText().toString()
-            );
-        });
 
+        // =====================================================
+        // BUTTONS
+        // =====================================================
 
         saveEntryButton.setOnClickListener(v -> {
-            saveProfile();
+
+            try {
+                saveProfile();
+            } catch (IllegalArgumentException error) {
+                Snackbar.make(layout, error.getMessage() == null
+                        ? "Check the entered numbers and dates." : error.getMessage(),
+                        Snackbar.LENGTH_LONG).show();
+            }
         });
 
+
         deleteEntryButton.setOnClickListener(v -> {
+
             deleteProfile();
         });
     }
 
 
+    // =========================================================
+    // POPULATE NORMAL FIELDS
+    // =========================================================
+
     private void populateFields() {
 
-        inputFirstName.setText(profile.firstName);
-        inputLastName.setText(profile.lastName);
+        inputFirstName.setText(
+                profile.firstName
+        );
 
-        inputObservationDate.setText(profile.observationDate);
-        inputLEADate.setText(profile.leaArrestDate);
-        inputCommitmentDate.setText(profile.commitmentDate);
-
-        inputMinYears.setText(String.valueOf(profile.minYears));
-        inputMinMonths.setText(String.valueOf(profile.minMonths));
-        inputMinDays.setText(String.valueOf(profile.minDays));
-
-        inputMaxYears.setText(String.valueOf(profile.maxYears));
-        inputMaxMonths.setText(String.valueOf(profile.maxMonths));
-        inputMaxDays.setText(String.valueOf(profile.maxDays));
-
-        inputDeductionRaw.setText(String.valueOf(profile.deductionDays));
-        inputTimeGap.setText(String.valueOf(profile.timeGapDays));
-
-
-        //Setting initial toggle values
-        committedSwitch.setChecked(profile.notCommittedToJail);
-        disqualifiedCPISwitch.setChecked(profile.disqualifiedForCPI);
-        disqualifiedTASwitch.setChecked(profile.disqualifiedForTimeAllowances);
-
-        updateCommitmentLabel();
-
-        inputSTAL.setEnabled(
-                !profile.disqualifiedForTimeAllowances
+        inputLastName.setText(
+                profile.lastName
         );
 
 
-        //Setting initial STAL dropdown value
+        inputLEADate.setText(
+                profile.leaArrestDate
+        );
+
+
+        inputMinYears.setText(
+                String.valueOf(
+                        profile.minYears
+                )
+        );
+
+        inputMinMonths.setText(
+                String.valueOf(
+                        profile.minMonths
+                )
+        );
+
+        inputMinDays.setText(
+                String.valueOf(
+                        profile.minDays
+                )
+        );
+
+
+        inputMaxYears.setText(
+                String.valueOf(
+                        profile.maxYears
+                )
+        );
+
+        inputMaxMonths.setText(
+                String.valueOf(
+                        profile.maxMonths
+                )
+        );
+
+        inputMaxDays.setText(
+                String.valueOf(
+                        profile.maxDays
+                )
+        );
+
+
+        inputDeductionRaw.setText(
+                String.valueOf(
+                        profile.deductionDays
+                )
+        );
+
+        inputTimeGap.setText(
+                String.valueOf(
+                        profile.timeGapDays
+                )
+        );
+
+
+        // Restore the website's STAL selection in every trigger mode.
+
         if (profile.stalPercent == 20) {
+
             inputSTAL.setSelection(1);
         }
+
         else if (profile.stalPercent == 40) {
+
             inputSTAL.setSelection(2);
         }
+
         else {
+
             inputSTAL.setSelection(0);
         }
     }
 
 
-    private void updateCommitmentLabel() {
+    // =========================================================
+    // NORMAL DATE PICKER
+    // =========================================================
 
-        if (committedSwitch.isChecked()) {
-            commitmentDateLabel.setText("Prison Commitment Date");
+    private void showDatePickerDialog(
+            EditText target,
+            String title) {
+
+        String pickerTag =
+                "DATE_PICKER_" + target.getId();
+
+
+        if (getSupportFragmentManager()
+                .findFragmentByTag(pickerTag) != null) {
+
+            return;
         }
-        else {
-            commitmentDateLabel.setText("Jail Commitment Date");
-        }
-    }
 
 
-    private void showDatePickerDialog(EditText target, String title) {
-
-        //by default opens on today's date
         long selectedDate =
                 MaterialDatePicker.todayInUtcMilliseconds();
 
 
-        //if editing an existing date, opens the picker on that date instead
+        /*
+         * If the field already contains a date,
+         * open the picker on that date.
+         */
+
         try {
+
             LocalDate currentDate =
-                    LocalDate.parse(
-                            target.getText().toString(),
-                            dateFormatter
+                    SentenceCalculator.optionalDate(
+                            target.getText()
+                                    .toString()
+                                    .trim(),
+                            title
                     );
 
-            selectedDate =
-                    currentDate
-                            .atStartOfDay(ZoneOffset.UTC)
-                            .toInstant()
-                            .toEpochMilli();
+
+            if (currentDate != null) {
+
+                selectedDate =
+                        currentDate
+                                .atStartOfDay(
+                                        ZoneOffset.UTC
+                                )
+                                .toInstant()
+                                .toEpochMilli();
+            }
+
         }
-        catch (DateTimeParseException ignored) {
+        catch (IllegalArgumentException ignored) {
+
+            // Invalid or empty input:
+            // simply open on today's date.
         }
 
 
         MaterialDatePicker<Long> materialDatePicker =
-                MaterialDatePicker.Builder.datePicker()
+                MaterialDatePicker.Builder
+                        .datePicker()
                         .setTitleText(title)
                         .setSelection(selectedDate)
                         .build();
 
 
-        materialDatePicker.addOnPositiveButtonClickListener(selection -> {
+        materialDatePicker
+                .addOnPositiveButtonClickListener(
+                        selection -> {
 
-            LocalDate selected =
-                    Instant.ofEpochMilli(selection)
-                            .atZone(ZoneOffset.UTC)
-                            .toLocalDate();
+                            LocalDate selected =
+                                    Instant
+                                            .ofEpochMilli(
+                                                    selection
+                                            )
+                                            .atZone(
+                                                    ZoneOffset.UTC
+                                            )
+                                            .toLocalDate();
 
-            target.setText(
-                    selected.format(dateFormatter)
-            );
-        });
+
+                            target.setText(
+                                    selected.format(
+                                            SentenceCalculator.DISPLAY_DATE
+                                    )
+                            );
+
+
+                            target.setError(null);
+                        }
+                );
 
 
         materialDatePicker.show(
                 getSupportFragmentManager(),
-                "DATE_PICKER"
+                pickerTag
         );
     }
 
+
+    // =========================================================
+    // DELETE PROFILE
+    // =========================================================
 
     private void deleteProfile() {
 
         new Thread(() -> {
 
-            profileDao.deleteUser(profile);
+            profileDao.deleteUser(
+                    profile
+            );
 
-            runOnUiThread(() -> finish());
+
+            runOnUiThread(
+                    this::finish
+            );
 
         }).start();
     }
 
 
+    // =========================================================
+    // SAVE PROFILE
+    // =========================================================
+
     private void saveProfile() {
-        /// Note: Need to add more validation. Check valid date order/ranges etc
 
-        if (inputFirstName.getText().toString().trim().isEmpty()) {
+        // =====================================================
+        // NAME VALIDATION
+        // =====================================================
 
-            Snackbar.make(layout, "First Name cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+        if (inputFirstName
+                .getText()
+                .toString()
+                .trim()
+                .isEmpty()) {
+
+            Snackbar.make(
+                    layout,
+                    "First Name cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
 
             return;
         }
+
 
         profile.firstName =
-                inputFirstName.getText().toString().trim();
+                inputFirstName
+                        .getText()
+                        .toString()
+                        .trim();
 
 
-        if (inputLastName.getText().toString().trim().isEmpty()) {
+        if (inputLastName
+                .getText()
+                .toString()
+                .trim()
+                .isEmpty()) {
 
-            Snackbar.make(layout, "Last Name cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+            Snackbar.make(
+                    layout,
+                    "Last Name cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
 
             return;
         }
+
 
         profile.lastName =
-                inputLastName.getText().toString().trim();
+                inputLastName
+                        .getText()
+                        .toString()
+                        .trim();
 
 
-        if (inputObservationDate.getText().toString().isEmpty()) {
+        // =====================================================
+        // REQUIRED BASIC DATES
+        // =====================================================
 
-            Snackbar.make(layout, "Observation Date cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
-
-            return;
-        }
-
-
-        if (inputLEADate.getText().toString().isEmpty()) {
-
-            Snackbar.make(layout, "LEA Arrest Date cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
-
-            return;
-        }
-
-
-        if (inputCommitmentDate.getText().toString().isEmpty()) {
-
-            Snackbar.make(layout, "Commitment Date cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
-
-            return;
-        }
-
-
-        profile.observationDate =
-                inputObservationDate.getText().toString();
+        // Today is supplied to the calculator; no observation date is saved or edited.
 
         profile.leaArrestDate =
-                inputLEADate.getText().toString();
-
-        profile.commitmentDate =
-                inputCommitmentDate.getText().toString();
-
-
-        //Default inputs of 0 for the integer inputs
-        profile.minYears = getIntOrZero(inputMinYears);
-        profile.minMonths = getIntOrZero(inputMinMonths);
-        profile.minDays = getIntOrZero(inputMinDays);
+                inputLEADate
+                        .getText()
+                        .toString()
+                        .trim();
 
 
-        if (profile.minYears
-                + profile.minMonths
-                + profile.minDays == 0) {
+        /*
+         * Commitment date is NOT written here.
+         *
+         * TriggerFormController knows whether the visible
+         * field represents jail or prison commitment.
+         */
 
-            Snackbar.make(layout, "Minimum Penalty Period cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+
+        // =====================================================
+        // MINIMUM PENALTY
+        // =====================================================
+
+        profile.minYears =
+                getIntOrZero(
+                        inputMinYears
+                );
+
+        profile.minMonths =
+                getIntOrZero(
+                        inputMinMonths
+                );
+
+        profile.minDays =
+                getIntOrZero(
+                        inputMinDays
+                );
+
+
+        if (profile.minYears == 0
+                && profile.minMonths == 0
+                && profile.minDays == 0) {
+
+            Snackbar.make(
+                    layout,
+                    "Minimum Penalty Period cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
 
             return;
         }
 
 
-        profile.maxYears = getIntOrZero(inputMaxYears);
-        profile.maxMonths = getIntOrZero(inputMaxMonths);
-        profile.maxDays = getIntOrZero(inputMaxDays);
+        // =====================================================
+        // MAXIMUM PENALTY
+        // =====================================================
+
+        profile.maxYears =
+                getIntOrZero(
+                        inputMaxYears
+                );
+
+        profile.maxMonths =
+                getIntOrZero(
+                        inputMaxMonths
+                );
+
+        profile.maxDays =
+                getIntOrZero(
+                        inputMaxDays
+                );
 
 
-        if (profile.maxYears
-                + profile.maxMonths
-                + profile.maxDays == 0) {
+        if (profile.maxYears == 0
+                && profile.maxMonths == 0
+                && profile.maxDays == 0) {
 
-            Snackbar.make(layout, "Maximum Penalty Period cannot be empty!", Snackbar.LENGTH_LONG)
-                    .setAction("Close", view -> {})
-                    .show();
+            Snackbar.make(
+                    layout,
+                    "Maximum Penalty Period cannot be empty!",
+                    Snackbar.LENGTH_LONG
+            ).show();
 
             return;
         }
 
 
-        profile.notCommittedToJail =
-                committedSwitch.isChecked();
+        // =====================================================
+        // STAL
+        // =====================================================
 
-        profile.disqualifiedForCPI =
-                disqualifiedCPISwitch.isChecked();
-
-        profile.disqualifiedForTimeAllowances =
-                disqualifiedTASwitch.isChecked();
-
-
-        //saving the actual STAL percentage rather than dropdown position
-        switch (inputSTAL.getSelectedItemPosition()) {
+        switch (
+                inputSTAL.getSelectedItemPosition()
+        ) {
 
             case 1:
+
                 profile.stalPercent = 20;
                 break;
 
+
             case 2:
+
                 profile.stalPercent = 40;
                 break;
 
+
             default:
+
                 profile.stalPercent = 0;
                 break;
         }
 
 
+        // =====================================================
+        // EXTRA ADJUSTMENTS
+        // =====================================================
+
         profile.deductionDays =
-                getIntOrZero(inputDeductionRaw);
+                getIntOrZero(
+                        inputDeductionRaw
+                );
+
 
         profile.timeGapDays =
-                getIntOrZero(inputTimeGap);
+                getIntOrZero(
+                        inputTimeGap
+                );
 
 
+        // =====================================================
+        // TRIGGER DATA
+        // =====================================================
+
+        /*
+         * Copies all trigger-specific UI values into the
+         * existing Profile object before Room updates it.
+         */
+
+        try {
+
+            triggerController.writeToProfile(profile);
+            profile.charges = additionalChargesController.readCharges(profile);
+            SentenceCalculator.Result calculation =
+                    SentenceCalculator.calculate(ProfileCalculationMapper.from(profile));
+            if (!calculation.available) {
+                throw new IllegalArgumentException(calculation.problem);
+            }
+
+        }
+        catch (IllegalArgumentException e) {
+
+            Snackbar.make(
+                    layout,
+                    e.getMessage() == null
+                            ? "Check the trigger-related dates."
+                            : e.getMessage(),
+                    Snackbar.LENGTH_LONG
+            ).show();
+
+            return;
+        }
+
+
+        // =====================================================
+        // UPDATE ROOM
+        // =====================================================
+
+        saveEntryButton.setEnabled(false);
         new Thread(() -> {
-
-            profileDao.updateUser(profile);
-
-            runOnUiThread(() -> finish());
-
+            try {
+                profileDao.updateUser(profile);
+            } catch (RuntimeException error) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    saveEntryButton.setEnabled(true);
+                    Snackbar.make(layout, R.string.profile_save_failed, Snackbar.LENGTH_LONG).show();
+                });
+                return;
+            }
+            runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) finish(); });
         }).start();
     }
 
 
-    private int getIntOrZero(EditText input) {
+    // =========================================================
+    // OPTIONAL INTEGER
+    // =========================================================
 
-        if (input.getText().toString().isEmpty()) {
+    private int getIntOrZero(
+            EditText input) {
+
+        String value =
+                input.getText()
+                        .toString()
+                        .trim();
+
+
+        if (value.isEmpty()) {
+
             return 0;
         }
 
-        return Integer.parseInt(
-                input.getText().toString()
+
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed < 0) throw new NumberFormatException();
+            return parsed;
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException("Enter non-negative whole numbers within the integer range.");
+        }
+    }
+
+
+    // =========================================================
+    // SAVE TEMPORARY TRIGGER STATE
+    // =========================================================
+
+    @Override
+    protected void onSaveInstanceState(
+            Bundle outState) {
+
+        if (triggerController != null) {
+
+            triggerController.saveInstanceState(
+                    outState
+            );
+        }
+
+        if (additionalChargesController != null) additionalChargesController.saveInstanceState(outState);
+
+
+        super.onSaveInstanceState(
+                outState
         );
     }
 
 
+    // =========================================================
+    // HOME / CANCEL
+    // =========================================================
+
     public void goHomeNE(View v) {
+
         finish();
     }
 }

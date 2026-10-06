@@ -18,6 +18,17 @@ public class profileModel {
     private long minRemainingDays;
     private long maxRemainingDays;
 
+    // Whether the release calculation had enough information to produce a result
+    private boolean calculationAvailable = false;
+
+    // Exact day values as text.
+// These can contain decimals later if CPI is credited at 4/5.
+    private String minimumExactDays = "N/A";
+    private String maximumExactDays = "N/A";
+
+    // Extra explanation/warnings shown with the calculated result
+    private String calculationNotes = "";
+
     private String suggestedAction;
 
     private int image;
@@ -97,6 +108,38 @@ public class profileModel {
 
     public long getMaxRemainingDays() {
         return maxRemainingDays;
+    }
+
+    public boolean isCalculationAvailable() {
+        return calculationAvailable;
+    }
+
+    public void setCalculationAvailable(boolean calculationAvailable) {
+        this.calculationAvailable = calculationAvailable;
+    }
+
+    public String getMinimumExactDays() {
+        return minimumExactDays;
+    }
+
+    public void setMinimumExactDays(String minimumExactDays) {
+        this.minimumExactDays = minimumExactDays;
+    }
+
+    public String getMaximumExactDays() {
+        return maximumExactDays;
+    }
+
+    public void setMaximumExactDays(String maximumExactDays) {
+        this.maximumExactDays = maximumExactDays;
+    }
+
+    public String getCalculationNotes() {
+        return calculationNotes;
+    }
+
+    public void setCalculationNotes(String calculationNotes) {
+        this.calculationNotes = calculationNotes;
     }
 
     public String getSuggestedAction() {

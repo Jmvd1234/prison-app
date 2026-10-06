@@ -11,6 +11,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
+
 import java.util.ArrayList;
 
 public class Profile_RecyclerViewAdapter
@@ -83,13 +85,34 @@ public class Profile_RecyclerViewAdapter
 
 
         //time remaining
-        holder.minTime.setText("Minimum Time Remaining: \n" + profile.getMinTimeRemaining() + " OR "  + profile.getMinRemainingDays() + " Days ");
+        // Only display the exact number of days if the calculation
+        // had enough information to produce a valid result.
+        String minRaw = profile.isCalculationAvailable()
+                ? " OR " + profile.getMinimumExactDays() + " days"
+                : "";
 
-        holder.maxTime.setText("Maximum Time Remaining: \n" + profile.getMaxTimeRemaining() + " OR "  + profile.getMaxRemainingDays() + " Days ");
+        String maxRaw = profile.isCalculationAvailable()
+                ? " OR " + profile.getMaximumExactDays() + " days"
+                : "";
 
 
-        //suggested action
+        holder.minTime.setText(
+                "Minimum estimated balance:\n"
+                        + profile.getMinTimeRemaining()
+                        + minRaw
+        );
+
+        holder.maxTime.setText(
+                "Maximum estimated balance:\n"
+                        + profile.getMaxTimeRemaining()
+                        + maxRaw
+        );
+
+
+        // Keep cards compact; calculation notes are not appended to each profile.
         holder.suggestedAction.setText("Action: " + profile.getSuggestedAction());
+        holder.suggestedAction.setVisibility(profile.getSuggestedAction().isEmpty()
+                ? View.GONE : View.VISIBLE);
 
 
 
@@ -123,14 +146,18 @@ public class Profile_RecyclerViewAdapter
         });
 
 
-        /*
-         * expandBreakdown currently has no click listener.
-         *
-         * Later:
-         * View Breakdown ▼
-         *
-         * will expand/collapse the calculation details.
-         */
+        holder.expandBreakdown.setContentDescription(context.getString(
+                R.string.view_profile_breakdown, profile.getFirstName(), profile.getLastName()));
+        holder.expandBreakdown.setOnClickListener(v -> {
+            int currentPosition = holder.getBindingAdapterPosition();
+            if (currentPosition == RecyclerView.NO_POSITION) return;
+
+            // Resolve the current row at click time, including after sorting/recycling.
+            Intent intent = new Intent(context, BreakdownActivity.class);
+            intent.putExtra(BreakdownActivity.EXTRA_PROFILE_ID,
+                    profileModels.get(currentPosition).getProfileID());
+            context.startActivity(intent);
+        });
     }
 
 
@@ -157,7 +184,7 @@ public class Profile_RecyclerViewAdapter
         TextView suggestedAction;
 
         TextView exportPDF;
-        TextView expandBreakdown;
+        MaterialButton expandBreakdown;
 
 
         //holds all the different views for one recycler view row

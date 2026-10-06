@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="first_charge_title">Charge 1</string>
+    <string name="charge_title">Charge %1$d</string>
+    <string name="add_charge">+ Add charge</string>
+    <string name="remove_charge_symbol" translatable="false">\u2212</string>
+    <string name="remove_charge_description">Remove Charge %1$d</string>
+    <string name="charge_input_description">Charge %1$d, %2$s</string>
+    <string-array name="charge_input_labels">
+        <item>minimum years</item>
+        <item>minimum months</item>
+        <item>minimum days</item>
+        <item>maximum years</item>
+        <item>maximum months</item>
+        <item>maximum days</item>
+    </string-array>
+</resources>

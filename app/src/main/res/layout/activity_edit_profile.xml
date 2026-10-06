@@ -25,7 +25,7 @@
             android:layout_marginTop="20dp"
             android:layout_marginStart="20dp"
             android:textStyle="bold"
-            android:textColor="@color/black"
+            android:textColor="@color/app_text_accent_color"
             android:background="@drawable/login_title"
             android:paddingHorizontal="10dp"
             android:paddingVertical="5dp"/>
@@ -70,7 +70,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/black"
+                android:textColor="@color/app_text_accent_color"
                 android:textStyle="bold"
                 android:text="EDIT ENTRY"
                 android:textSize="35sp"
@@ -110,7 +110,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="First Name"
-                        android:textColor="@color/black"
+                        android:textColor="@color/app_text_accent_color"
                         android:textSize="20sp"/>
                     <EditText
                         android:id="@+id/inputFirstName"
@@ -127,7 +127,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Last Name"
-                        android:textColor="@color/black"
+                        android:textColor="@color/app_text_accent_color"
                         android:textSize="20sp"/>
                     <EditText
                         android:id="@+id/inputLastName"
@@ -151,46 +151,16 @@
                 android:background="@android:color/black"
                 android:layout_marginVertical="10dp"/>
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/firstChargeTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Observation Date"
-                    android:textColor="@color/black"
-                    android:textSize="20sp"/>
-
-                <Space
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"/>
-
-                <EditText
-                    android:id="@+id/inputObservationDate"
-                    android:layout_width="120dp"
-                    android:layout_height="32dp"
-                    android:background="@drawable/entertextbox"
-                    android:layout_marginVertical="5dp"
-                    android:paddingStart="7dp"
-                    android:textSize="11sp"
-                    android:hint="mm/dd/yy"
-                    android:focusable="false"
-                    android:clickable="true"
-                    android:inputType="none"
-                    android:textColor="@color/black"/>
-
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:background="@android:color/black"
-                android:layout_marginVertical="10dp"/>
+                android:minHeight="36dp"
+                android:gravity="center_vertical"
+                android:text="@string/first_charge_title"
+                android:textColor="@color/app_text_accent_color"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -203,7 +173,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Min. Penalty Period"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -261,7 +231,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Max. Penalty Period"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -309,6 +279,22 @@
 
             </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/additionalChargesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/addChargeButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_gravity="start"
+                android:text="@string/add_charge"
+                android:textAllCaps="false"
+                android:textColor="@color/breakdown_button_green" />
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="4dp"
@@ -326,7 +312,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="LEA Arrest Date"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -362,7 +348,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Jail Commitment Date"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -397,7 +383,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Not Committed To Jail"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -407,8 +393,6 @@
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/committedSwitch"
-                    layout_width="wrap_content"
-                    layout_height="wrap_content"
                     android:checked="false"
                     android:layout_height="10dp"
                     android:layout_width="60dp"
@@ -428,7 +412,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Disqualified for CPI"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -438,8 +422,6 @@
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/disqualifiedCPISwitch"
-                    layout_width="wrap_content"
-                    layout_height="wrap_content"
                     android:checked="false"
                     android:layout_height="10dp"
                     android:layout_width="60dp"
@@ -459,7 +441,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Disqualified for Time Allowances"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -469,8 +451,6 @@
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/disqualifiedTASwitch"
-                    layout_width="wrap_content"
-                    layout_height="wrap_content"
                     android:checked="false"
                     android:layout_height="10dp"
                     android:layout_width="60dp"
@@ -478,6 +458,12 @@
 
 
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/triggerDetailsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
 
             <View
                 android:layout_width="match_parent"
@@ -496,7 +482,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="STAL (Loyalty Credit)"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -524,7 +510,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Deductions"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -558,7 +544,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Time Gap on Bail/ATI"
-                    android:textColor="@color/black"
+                    android:textColor="@color/app_text_accent_color"
                     android:textSize="20sp"/>
 
                 <Space
@@ -591,7 +577,8 @@
                 android:layout_marginTop="10dp"
                 android:layout_width="250dp"
                 android:layout_height="50dp"
-                android:background="@drawable/credentials_background"
+                android:background="@drawable/button_background"
+                android:textColor="@color/app_button_text_color"
                 android:textStyle="bold"
                 android:textSize="24sp"
                 android:text="SAVE ENTRY"/>
@@ -601,6 +588,7 @@
                 android:layout_width="250dp"
                 android:layout_height="50dp"
                 android:background="@drawable/delete_background"
+                android:textColor="@color/app_button_text_color"
                 android:textStyle="bold"
                 android:textSize="24sp"
                 android:text="DELETE ENTRY"/>

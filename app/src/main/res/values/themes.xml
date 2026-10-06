@@ -1,8 +1,36 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.MyApplication" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <style name="Base.Theme.MyApplication" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/app_text_accent_color</item>
+        <item name="colorOnPrimary">@color/app_button_text_color</item>
+        <item name="colorPrimaryContainer">@color/app_section_color</item>
+        <item name="colorOnPrimaryContainer">@color/app_ink</item>
+        <item name="colorSecondary">@color/app_text_accent_color</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/app_section_color</item>
+        <item name="colorOnSecondaryContainer">@color/app_ink</item>
+        <item name="colorSurface">@color/app_surface_color</item>
+        <item name="colorOnSurface">@color/app_ink</item>
+        <item name="colorSurfaceVariant">@color/app_section_color</item>
+        <item name="colorOnSurfaceVariant">@color/app_secondary_ink</item>
+        <item name="colorOutline">@color/app_outline</item>
+        <item name="android:colorBackground">@color/white</item>
+        <item name="colorOnBackground">@color/app_ink</item>
+        <item name="colorControlActivated">@color/app_icon_color</item>
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="materialButtonStyle">@style/AppFilledButton</item>
+        <item name="materialSwitchStyle">@style/AppSwitch</item>
+    </style>
+
+    <style name="AppFilledButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/app_button_color</item>
+        <item name="android:textColor">@color/app_button_text_color</item>
+    </style>
+
+    <style name="AppSwitch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/app_switch_thumb</item>
+        <item name="trackTint">@color/app_switch_track</item>
+        <item name="trackDecorationTint">@color/app_switch_track</item>
     </style>
 
     <style name="Theme.MyApplication" parent="Base.Theme.MyApplication" />

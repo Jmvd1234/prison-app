@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_breakdown_title">Sentence breakdown</string>
+    <string name="minimum_remaining_sentence">Minimum remaining sentence</string>
+    <string name="maximum_remaining_sentence">Maximum remaining sentence</string>
+    <string name="close_profile_breakdown">Close breakdown</string>
+    <string name="profile_breakdown_close_symbol" translatable="false">\u00D7</string>
+    <string name="breakdown_balance_value">%1$s (%2$d days)</string>
+    <string name="profile_save_failed">Could not save the profile. Please try again.</string>
+    <string name="breakdown_days">Days</string>
+    <string name="breakdown_gcta">GCTA</string>
+    <string name="breakdown_tastm">TASTM</string>
+    <string name="breakdown_lea">LEA</string>
+    <string name="breakdown_jail">Jail</string>
+    <string name="breakdown_prison">Prison</string>
+    <string name="breakdown_total">Total</string>
+    <string name="breakdown_table_caption">Days and credits before STAL, deductions and bail/ATI gaps.</string>
+    <string name="breakdown_stal_none">STAL (None)</string>
+    <string name="breakdown_stal_percent">STAL (%1$d%%)</string>
+    <string name="breakdown_credit_days">%1$s days</string>
+    <string name="breakdown_unrecorded" translatable="false">\u2014</string>
+    <string name="breakdown_not_recorded">No separate stage recorded</string>
+    <string name="breakdown_legend">\u2014 No separate stage recorded</string>
+    <string name="breakdown_cell_description">%1$s, %2$s: %3$s</string>
+    <string name="view_breakdown">View Breakdown</string>
+    <string name="view_profile_breakdown">View breakdown for %1$s %2$s</string>
+    <string name="breakdown_screen_title">Breakdown</string>
+    <string name="breakdown_back">Back to dashboard</string>
+    <string name="breakdown_profile_name">%1$s %2$s</string>
+    <string name="breakdown_observation">Observation date: %1$s</string>
+    <string name="breakdown_loading">Loading breakdown…</string>
+    <string name="breakdown_profile_missing">This profile is no longer available.</string>
+    <string name="breakdown_sign_in">Sign in to view this profile.</string>
+    <string name="breakdown_load_failed">Could not load the breakdown. Please go back and try again.</string>
+    <string name="breakdown_calculation_failed">Check this profile’s inputs: %1$s</string>
+    <string name="breakdown_observation_today">Observation date: %1$s · Today</string>
+    <string name="breakdown_observation_preview">Observation date: %1$s · Preview</string>
+    <string name="breakdown_monthly_preview">Monthly preview</string>
+    <string name="breakdown_today">Today</string>
+    <string name="breakdown_slider_description">Preview the sentence by month</string>
+    <string name="breakdown_range_start">Start: %1$s</string>
+    <string name="breakdown_range_end">End: %1$s</string>
+    <string name="breakdown_marker_arrest">LEA arrest</string>
+    <string name="breakdown_marker_jail">Jail entry</string>
+    <string name="breakdown_marker_prison">Prison entry</string>
+    <string name="breakdown_marker_minimum">Minimum zero</string>
+    <string name="breakdown_marker_maximum">Maximum zero</string>
+    <string name="breakdown_milestone_label">%1$s\n%2$s</string>
+    <string name="breakdown_projection_failed">Monthly preview unavailable: %1$s</string>
+</resources>

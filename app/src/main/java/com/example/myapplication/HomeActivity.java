@@ -1,11 +1,12 @@
 package com.example.myapplication;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -15,6 +16,22 @@ import android.widget.ImageButton;
 public class HomeActivity extends AppCompatActivity {
 
     ImageButton homeBackButton;
+
+    private final ActivityResultLauncher<Intent> newEntryLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                Intent data = result.getData();
+                if (result.getResultCode() != RESULT_OK || data == null) return;
+
+                Bundle breakdown = data.getBundleExtra(newEntryActivity.EXTRA_BREAKDOWN);
+                if (breakdown == null) return;
+
+                // A restored dialog already contains its values after rotation.
+                if (getSupportFragmentManager().findFragmentByTag(
+                        ProfileBreakdownDialogFragment.TAG) == null) {
+                    ProfileBreakdownDialogFragment.newInstance(breakdown)
+                            .show(getSupportFragmentManager(), ProfileBreakdownDialogFragment.TAG);
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +55,7 @@ public class HomeActivity extends AppCompatActivity {
 
     public void make_new_entry(View v){
         Intent i = new Intent(this, newEntryActivity.class);
-        startActivity(i);
+        newEntryLauncher.launch(i);
     }
 
     public void contact_help(View v){
