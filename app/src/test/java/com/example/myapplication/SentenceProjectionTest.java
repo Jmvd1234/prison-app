@@ -61,7 +61,7 @@ public class SentenceProjectionTest {
         for (int i = 1; i < r.dates.size(); i++) assertTrue(r.dates.get(i).isAfter(r.dates.get(i - 1)));
         assertEquals(r.start, r.dates.get(0));
         assertEquals(r.end, r.dates.get(r.dates.size() - 1));
-        assertEquals(r.maximumCompletion, r.end);
+        assertEquals(r.start.plusDays(result(p, r.start).maxRemainingDays), r.end);
     }
 
     @Test public void completedSentenceExtendsTheRangeToToday() {

@@ -63,7 +63,9 @@ public class Profile_RecyclerViewAdapter
 
 
         //profile details
-        holder.imageView.setImageResource(profile.getImage());
+        ProfilePhotoLoader.show(holder.imageView, profile.getImagePath(), R.drawable.profile_placeholder);
+        holder.imageView.setContentDescription(context.getString(R.string.profile_photo_edit,
+                profile.getFirstName(), profile.getLastName()));
 
         holder.firstName.setText("First Name: " + profile.getFirstName());
 
@@ -162,6 +164,12 @@ public class Profile_RecyclerViewAdapter
 
 
     @Override
+    public void onViewRecycled(@NonNull MyViewHolder holder) {
+        ProfilePhotoLoader.show(holder.imageView, null, R.drawable.profile_placeholder);
+        super.onViewRecycled(holder);
+    }
+
+    @Override
     public int getItemCount() {
         return profileModels.size();
     }
@@ -234,10 +242,6 @@ public class Profile_RecyclerViewAdapter
                             R.id.actionBox
                     );
 
-            exportPDF =
-                    itemView.findViewById(
-                            R.id.exportPDFBox
-                    );
 
             expandBreakdown =
                     itemView.findViewById(

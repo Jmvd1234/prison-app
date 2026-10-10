@@ -3,7 +3,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <!-- EDIT THESE INDEPENDENTLY: changing buttons does not recolor backgrounds. -->
-    <color name="app_button_color">#8ca2c2</color>
+    <color name="app_button_color">#B5DCF0</color>
     <color name="app_background_gradient_color">#4168c4</color>
     <color name="app_text_accent_color">#000000</color>
 

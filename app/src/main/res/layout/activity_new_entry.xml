@@ -89,17 +89,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/profileImage"
-                    android:layout_width="170dp"
-                    android:layout_height="170dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:contentDescription="Upload profile image"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/outline_account_box_24"
-                    app:strokeColor="#999999"
-                    app:strokeWidth="3dp" />
+                <include layout="@layout/view_profile_photo" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -587,6 +577,7 @@
                 android:textColor="@color/app_button_text_color"
                 android:textStyle="bold"
                 android:textSize="24sp"
+                android:backgroundTint="#789171"
                 android:text="SAVE ENTRY"/>
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/deleteEntryButton"
@@ -594,6 +585,7 @@
                 android:layout_width="250dp"
                 android:layout_height="50dp"
                 android:background="@drawable/delete_background"
+                android:backgroundTint="#bd6262"
                 android:textColor="@color/app_button_text_color"
                 android:textStyle="bold"
                 android:textSize="24sp"

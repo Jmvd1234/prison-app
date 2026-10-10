@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Each milestone is a normal, editable TextView. Tap it to select its date. -->
+<!-- Labels remain editable TextViews. Release labels move with earned-credit estimates;
+     tapping one selects its fixed zero date. Custody labels select the recorded date. -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"

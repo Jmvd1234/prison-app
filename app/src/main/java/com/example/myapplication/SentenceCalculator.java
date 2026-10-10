@@ -175,7 +175,7 @@ public final class SentenceCalculator {
                     ? optionalDate(in.convictionDate, "Date of conviction") : null;
             require(!commitment.isBefore(arrest), "Commitment cannot precede arrest.");
             require(!observation.isBefore(preview ? arrest : commitment), preview
-                    ? "Preview cannot precede arrest." : "Observation cannot precede commitment.");
+                    ? "Preview cannot precede arrest." : "Current date cannot precede commitment.");
             require(in.timeGapDays >= 0 && in.deductionDays >= 0,
                     "Gap and deduction days must be non-negative.");
             require(in.stalPercent == 0 || in.stalPercent == 20 || in.stalPercent == 40,

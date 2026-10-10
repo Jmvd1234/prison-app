@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="release_minimum_marker">#C45100</color>
+    <color name="release_maximum_marker">#C62828</color>
+    <color name="release_marker_halo">@color/white</color>
+</resources>

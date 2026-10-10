@@ -57,6 +57,9 @@ public abstract class ProfileDao {
 
     @Delete public abstract void deleteUser(Profile profile);
 
+    @Query("SELECT COUNT(*) FROM Profile WHERE image_path = :path")
+    public abstract int countProfilesWithPhoto(String path);
+
     private static List<ProfileCharge> snapshot(Profile profile) {
         // Also supports callers building a one-charge profile from the first form row.
         List<ProfileCharge> charges = profile.charges == null || profile.charges.isEmpty()

@@ -35,7 +35,7 @@
         android:layout_height="150dp"
         android:layout_marginTop="20dp"
         android:background="@drawable/credentials_background"
-        android:backgroundTint="@color/app_button_color"
+        android:backgroundTint="@color/app_outline"
         android:gravity="center"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -88,12 +88,25 @@
             android:id="@+id/signInButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@color/app_button_color"
+            android:backgroundTint="@color/app_outline"
             android:onClick="signIn"
             android:text="Sign In"
             android:textColor="@color/app_button_text_color"
             android:textSize="30sp" />
     </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginBottom="15dp"
+        android:textColor="@color/black"
+        android:text="Laya does not upload any data to the internet \n
+and works fully offline. Login is only used to \n distinguish user accounts on the same device"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

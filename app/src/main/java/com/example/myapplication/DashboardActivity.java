@@ -44,10 +44,10 @@ public class DashboardActivity extends AppCompatActivity {
             "Last Name";
 
     private static final String SORT_MIN_TIME =
-            "Minimum Time Remaining";
+            "Min. Time Remaining";
 
     private static final String SORT_MAX_TIME =
-            "Maximum Time Remaining";
+            "Max. Time Remaining";
 
     private static final String SORT_ARREST_DATE =
             "LEA Arrest Date";
@@ -444,7 +444,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                                     result.actionText(),
 
-                                    R.drawable.profile_placeholder
+                                    profile.image_path
                             );
 
 

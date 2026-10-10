@@ -47,4 +47,15 @@
     <string name="breakdown_marker_maximum">Maximum zero</string>
     <string name="breakdown_milestone_label">%1$s\n%2$s</string>
     <string name="breakdown_projection_failed">Monthly preview unavailable: %1$s</string>
+    <string name="breakdown_minimum_release">Minimum release</string>
+    <string name="breakdown_maximum_release">Maximum release</string>
+    <string name="breakdown_release_estimate">Estimated date</string>
+    <string name="breakdown_zero_reached">Zero reached</string>
+    <string name="breakdown_zero_balance">0y, 0m, 0d (0 days)</string>
+    <string name="breakdown_release_basis">Using credits earned by the selected date.</string>
+    <string name="breakdown_zero_marker_hint">Outlined: estimate · Filled: zero reached\nTap a release label to jump to zero.</string>
+    <string name="breakdown_marker_minimum_estimate">Minimum estimate</string>
+    <string name="breakdown_marker_maximum_estimate">Maximum estimate</string>
+    <string name="breakdown_release_marker_action">%1$s, %2$s. Jump to zero on %3$s.</string>
+    <string name="breakdown_marker_beyond_range">%1$s ›</string>
 </resources>

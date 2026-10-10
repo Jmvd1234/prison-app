@@ -59,6 +59,7 @@ public class editProfileActivity extends AppCompatActivity {
     // Shared website-style switches, commitment date and optional conviction date.
     private TriggerFormController triggerController;
     private AdditionalChargesController additionalChargesController;
+    private ProfilePhotoController photoController;
 
 
     @Override
@@ -308,6 +309,8 @@ public class editProfileActivity extends AppCompatActivity {
         // BUTTONS
         // =====================================================
 
+        photoController = new ProfilePhotoController(this, profile.image_path, result -> finish());
+
         saveEntryButton.setOnClickListener(v -> {
 
             try {
@@ -522,19 +525,7 @@ public class editProfileActivity extends AppCompatActivity {
     // =========================================================
 
     private void deleteProfile() {
-
-        new Thread(() -> {
-
-            profileDao.deleteUser(
-                    profile
-            );
-
-
-            runOnUiThread(
-                    this::finish
-            );
-
-        }).start();
+        photoController.delete(profile);
     }
 
 
@@ -764,20 +755,7 @@ public class editProfileActivity extends AppCompatActivity {
         // UPDATE ROOM
         // =====================================================
 
-        saveEntryButton.setEnabled(false);
-        new Thread(() -> {
-            try {
-                profileDao.updateUser(profile);
-            } catch (RuntimeException error) {
-                runOnUiThread(() -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    saveEntryButton.setEnabled(true);
-                    Snackbar.make(layout, R.string.profile_save_failed, Snackbar.LENGTH_LONG).show();
-                });
-                return;
-            }
-            runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) finish(); });
-        }).start();
+        photoController.save(profile, false, null);
     }
 
 

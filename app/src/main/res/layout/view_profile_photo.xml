@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="170dp"
+    android:layout_height="170dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/profileImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/profile_photo_choose"
+        android:scaleType="centerCrop"
+        android:src="@drawable/outline_account_box_24"
+        app:strokeColor="@color/app_outline"
+        app:strokeWidth="3dp" />
+
+    <ProgressBar
+        android:id="@+id/profilePhotoProgress"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/removeProfilePhoto"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="4dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:padding="12dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:contentDescription="@string/profile_photo_remove"
+        android:visibility="gone"
+        app:backgroundTint="@color/app_button_color"
+        app:cornerRadius="24dp"
+        app:icon="@drawable/ic_delete_photo"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:iconSize="24dp"
+        app:iconTint="@color/app_icon_color" />
+</FrameLayout>

@@ -1,0 +1,10 @@
+<resources>
+    <item name="profile_photo_request" type="id" />
+    <string name="profile_photo_choose">Choose profile photo</string>
+    <string name="profile_photo_replace">Replace profile photo</string>
+    <string name="profile_photo_remove">Remove profile photo</string>
+    <string name="profile_photo_failed">Could not load that photo. Choose another image under 32 MB.</string>
+    <string name="profile_photo_picker_unavailable">No photo picker is available on this device.</string>
+    <string name="profile_delete_failed">Could not delete this profile. Please try again.</string>
+    <string name="profile_photo_edit">Edit profile for %1$s %2$s</string>
+</resources>

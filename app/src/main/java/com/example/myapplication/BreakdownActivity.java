@@ -28,8 +28,9 @@ public class BreakdownActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final TodayDateObserver dateObserver = new TodayDateObserver(this, this::prepareProjection);
     private TextView profileName, observationDate, status, rangeStart, rangeEnd;
+    private TextView minimumReleaseDate, maximumReleaseDate, minimumReleaseState, maximumReleaseState;
     private TimelineMilestonesLayout timeline;
-    private View breakdownCard, previewControls;
+    private View breakdownCard, previewControls, releaseDates;
     private Slider dateSlider;
     private Profile profile;
     private SentenceProjection.Range range;
@@ -57,6 +58,11 @@ public class BreakdownActivity extends AppCompatActivity {
         rangeStart = findViewById(R.id.breakdownRangeStart);
         rangeEnd = findViewById(R.id.breakdownRangeEnd);
         timeline = findViewById(R.id.breakdownTimeline);
+        releaseDates = findViewById(R.id.breakdownReleaseDates);
+        minimumReleaseDate = findViewById(R.id.breakdownMinimumReleaseDate);
+        maximumReleaseDate = findViewById(R.id.breakdownMaximumReleaseDate);
+        minimumReleaseState = findViewById(R.id.breakdownMinimumReleaseState);
+        maximumReleaseState = findViewById(R.id.breakdownMaximumReleaseState);
         // The selected date belongs to this screen's state, not to Room or View auto-restoration.
         dateSlider.setSaveEnabled(false);
         if (savedInstanceState != null) {
@@ -196,14 +202,24 @@ public class BreakdownActivity extends AppCompatActivity {
                 date.format(SentenceCalculator.DISPLAY_DATE)));
         observationDate.setVisibility(View.VISIBLE);
         if (!result.available) {
+            releaseDates.setVisibility(View.GONE);
             breakdownCard.setVisibility(View.GONE);
             status.setText(getString(R.string.breakdown_calculation_failed, result.problem));
             status.setVisibility(View.VISIBLE);
             return;
         }
+        SentenceProjection.ReleaseDates dates = SentenceProjection.releaseDates(range, date, result);
+        minimumReleaseDate.setText(dates.minimum.format(SentenceCalculator.DISPLAY_DATE));
+        maximumReleaseDate.setText(dates.maximum.format(SentenceCalculator.DISPLAY_DATE));
+        minimumReleaseState.setText(dates.minimumReached ? R.string.breakdown_zero_reached : R.string.breakdown_release_estimate);
+        maximumReleaseState.setText(dates.maximumReached ? R.string.breakdown_zero_reached : R.string.breakdown_release_estimate);
+        releaseDates.setVisibility(View.VISIBLE);
+        timeline.setPreview(date, dates);
         Bundle values = BreakdownViewBinder.createArguments(
-                getString(R.string.breakdown_balance_value, result.minimumText(date), result.minRemainingDays),
-                getString(R.string.breakdown_balance_value, result.maximumText(date), result.maxRemainingDays),
+                dates.minimumReached ? getString(R.string.breakdown_zero_balance)
+                        : getString(R.string.breakdown_balance_value, result.minimumText(date), result.minRemainingDays),
+                dates.maximumReached ? getString(R.string.breakdown_zero_balance)
+                        : getString(R.string.breakdown_balance_value, result.maximumText(date), result.maxRemainingDays),
                 result);
         BreakdownViewBinder.bind(breakdownCard, values);
         status.setVisibility(View.GONE);
@@ -215,6 +231,7 @@ public class BreakdownActivity extends AppCompatActivity {
     }
 
     private void showError(String message) {
+        releaseDates.setVisibility(View.GONE);
         previewControls.setVisibility(View.GONE);
         breakdownCard.setVisibility(View.GONE);
         status.setText(message);

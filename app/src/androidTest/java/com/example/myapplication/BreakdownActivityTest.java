@@ -156,6 +156,48 @@ public class BreakdownActivityTest {
         assertEquals(0, unchanged.deductionDays);
     }
 
+    @Test public void releaseDatesMoveWithCreditsPinAtZeroAndRewind() throws Exception {
+        Profile p = db.ProfileDao().getProfileByProfileID(ordinaryID);
+        SentenceProjection.Range range = SentenceProjection.create(p, LocalDate.now());
+        LocalDate first = LocalDate.of(2019, 1, 20), next = first.plusMonths(1);
+        SentenceCalculator.Result initial = SentenceCalculator.calculatePreview(ProfileCalculationMapper.from(p, first));
+        LocalDate firstMinimum = first.plusDays(initial.minRemainingDays);
+        LocalDate firstMaximum = first.plusDays(initial.maxRemainingDays);
+        Intent intent = new Intent(context, BreakdownActivity.class)
+                .putExtra(BreakdownActivity.EXTRA_PROFILE_ID, ordinaryID);
+        try (ActivityScenario<BreakdownActivity> scenario = ActivityScenario.launch(intent)) {
+            awaitTodayResult();
+            scenario.onActivity(activity -> {
+                Slider slider = activity.findViewById(R.id.breakdownDateSlider);
+                slider.setValue(range.dates.indexOf(first));
+                assertText(activity, R.id.breakdownMinimumReleaseDate, firstMinimum.format(SentenceCalculator.DISPLAY_DATE));
+                assertText(activity, R.id.breakdownMaximumReleaseDate, firstMaximum.format(SentenceCalculator.DISPLAY_DATE));
+                slider.setValue(range.dates.indexOf(next));
+                assertText(activity, R.id.breakdownMinimumReleaseDate, firstMinimum.minusDays(35).format(SentenceCalculator.DISPLAY_DATE));
+                assertText(activity, R.id.breakdownMaximumReleaseDate, firstMaximum.minusDays(35).format(SentenceCalculator.DISPLAY_DATE));
+            });
+            screenshot("release-dates-moving.png");
+            scenario.onActivity(activity -> activity.findViewById(R.id.breakdownTimeline)
+                    .findViewWithTag(range.maximumCompletion.toString()).performClick());
+            scenario.recreate();
+            await(BreakdownActivity.class, activity -> {
+                if (activity.findViewById(R.id.breakdownCard).getVisibility() != View.VISIBLE) return false;
+                assertText(activity, R.id.breakdownMinimumReleaseDate, range.minimumCompletion.format(SentenceCalculator.DISPLAY_DATE));
+                assertText(activity, R.id.breakdownMaximumReleaseDate, range.maximumCompletion.format(SentenceCalculator.DISPLAY_DATE));
+                assertText(activity, R.id.minimumSentenceValue, context.getString(R.string.breakdown_zero_balance));
+                assertText(activity, R.id.maximumSentenceValue, context.getString(R.string.breakdown_zero_balance));
+                return true;
+            });
+            screenshot("release-dates-zero.png");
+            scenario.onActivity(activity -> {
+                ((Slider) activity.findViewById(R.id.breakdownDateSlider)).setValue(range.dates.indexOf(first));
+                assertText(activity, R.id.breakdownMinimumReleaseDate, firstMinimum.format(SentenceCalculator.DISPLAY_DATE));
+                assertText(activity, R.id.breakdownMinimumReleaseState, context.getString(R.string.breakdown_release_estimate));
+            });
+        }
+        assertEquals("2020-02-20", db.ProfileDao().getProfileByProfileID(ordinaryID).observationDate);
+    }
+
     private void previewHistoricalMonth(ActivityScenario<BreakdownActivity> scenario) {
         Profile p = db.ProfileDao().getProfileByProfileID(ordinaryID);
         int index = SentenceProjection.create(p, LocalDate.now()).dates.indexOf(LocalDate.of(2020, 2, 20));
@@ -198,8 +240,10 @@ public class BreakdownActivityTest {
                 SentenceCalculator.Result minimum = SentenceCalculator.calculatePreview(
                         ProfileCalculationMapper.from(p, range.minimumCompletion));
                 assertTrue(minimum.minRemainingDays <= 0);
-                assertText(activity, R.id.minimumSentenceValue, context.getString(R.string.breakdown_balance_value,
-                        minimum.minimumText(range.minimumCompletion), minimum.minRemainingDays));
+                assertText(activity, R.id.minimumSentenceValue, context.getString(R.string.breakdown_zero_balance));
+                assertText(activity, R.id.breakdownMinimumReleaseDate,
+                        range.minimumCompletion.format(SentenceCalculator.DISPLAY_DATE));
+                assertText(activity, R.id.breakdownMinimumReleaseState, context.getString(R.string.breakdown_zero_reached));
             });
             screenshot("timeline-minimum-zero.png");
             scenario.onActivity(activity -> {
@@ -210,8 +254,10 @@ public class BreakdownActivityTest {
                 SentenceCalculator.Result maximum = SentenceCalculator.calculatePreview(
                         ProfileCalculationMapper.from(p, range.maximumCompletion));
                 assertTrue(maximum.maxRemainingDays <= 0);
-                assertText(activity, R.id.maximumSentenceValue, context.getString(R.string.breakdown_balance_value,
-                        maximum.maximumText(range.maximumCompletion), maximum.maxRemainingDays));
+                assertText(activity, R.id.maximumSentenceValue, context.getString(R.string.breakdown_zero_balance));
+                assertText(activity, R.id.breakdownMaximumReleaseDate,
+                        range.maximumCompletion.format(SentenceCalculator.DISPLAY_DATE));
+                assertText(activity, R.id.breakdownMaximumReleaseState, context.getString(R.string.breakdown_zero_reached));
             });
         }
         assertEquals("2020-02-20", db.ProfileDao().getProfileByProfileID(ordinaryID).observationDate);
@@ -232,11 +278,13 @@ public class BreakdownActivityTest {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
             scenario.onActivity(activity -> {
                 ViewGroup timeline = activity.findViewById(R.id.breakdownTimeline);
-                assertEquals(3, timeline.getChildCount()); // Slider plus two grouped labels.
+                assertEquals(4, timeline.getChildCount()); // Slider, grouped custody, two release labels.
                 assertTrue(((TextView) timeline.findViewWithTag(range.start.toString()))
                         .getText().toString().contains("LEA arrest / Jail entry"));
-                assertTrue(((TextView) timeline.findViewWithTag(range.minimumCompletion.toString()))
-                        .getText().toString().contains("Minimum zero / Maximum zero"));
+                assertTrue(((TextView) timeline.findViewById(R.id.timelineMinimumReleaseLabel))
+                        .getText().toString().contains("Minimum zero"));
+                assertTrue(((TextView) timeline.findViewById(R.id.timelineMaximumReleaseLabel))
+                        .getText().toString().contains("Maximum zero"));
                 assertLabelsDoNotOverlap(timeline);
             });
             screenshot("timeline-coincident.png");
@@ -255,6 +303,56 @@ public class BreakdownActivityTest {
                 }
             });
         }
+    }
+
+    @Test public void releaseLabelsActuallyMoveOnTheTrackAndConvergeAtZero() throws Exception {
+        Profile p = db.ProfileDao().getProfileByProfileID(ordinaryID);
+        SentenceProjection.Range range = SentenceProjection.create(p, LocalDate.now());
+        LocalDate first = LocalDate.of(2019, 1, 20), later = LocalDate.of(2021, 1, 20);
+        int[] earlierLeft = new int[2];
+        Intent intent = new Intent(context, BreakdownActivity.class)
+                .putExtra(BreakdownActivity.EXTRA_PROFILE_ID, ordinaryID);
+        try (ActivityScenario<BreakdownActivity> scenario = ActivityScenario.launch(intent)) {
+            awaitTodayResult();
+            scenario.onActivity(activity -> ((Slider) activity.findViewById(R.id.breakdownDateSlider))
+                    .setValue(range.dates.indexOf(first)));
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            scenario.onActivity(activity -> {
+                ViewGroup timeline = activity.findViewById(R.id.breakdownTimeline);
+                earlierLeft[0] = timeline.findViewById(R.id.timelineMinimumReleaseLabel).getLeft();
+                earlierLeft[1] = timeline.findViewById(R.id.timelineMaximumReleaseLabel).getLeft();
+                assertTrue(((TextView) timeline.findViewById(R.id.timelineMinimumReleaseLabel))
+                        .getText().toString().startsWith("Minimum estimate"));
+                assertLabelsDoNotOverlap(timeline);
+                ((Slider) activity.findViewById(R.id.breakdownDateSlider)).setValue(range.dates.indexOf(later));
+            });
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            scenario.onActivity(activity -> {
+                ViewGroup timeline = activity.findViewById(R.id.breakdownTimeline);
+                assertTrue(timeline.findViewById(R.id.timelineMinimumReleaseLabel).getLeft() < earlierLeft[0]);
+                assertTrue(timeline.findViewById(R.id.timelineMaximumReleaseLabel).getLeft() < earlierLeft[1]);
+                assertLabelsDoNotOverlap(timeline);
+            });
+            screenshot("moving-labels-estimates.png");
+            scenario.onActivity(activity -> activity.findViewById(R.id.timelineMinimumReleaseLabel).performClick());
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            scenario.onActivity(activity -> {
+                assertEquals(range.dates.indexOf(range.minimumCompletion),
+                        Math.round(((Slider) activity.findViewById(R.id.breakdownDateSlider)).getValue()));
+                assertText(activity, R.id.timelineMinimumReleaseLabel,
+                        "Minimum zero\n" + range.minimumCompletion.format(SentenceCalculator.DISPLAY_DATE));
+            });
+            screenshot("moving-labels-minimum-zero.png");
+            scenario.onActivity(activity -> activity.findViewById(R.id.timelineMaximumReleaseLabel).performClick());
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            scenario.onActivity(activity -> {
+                assertText(activity, R.id.timelineMaximumReleaseLabel,
+                        "Maximum zero\n" + range.maximumCompletion.format(SentenceCalculator.DISPLAY_DATE));
+                assertLabelsDoNotOverlap(activity.findViewById(R.id.breakdownTimeline));
+            });
+            screenshot("moving-labels-both-zero.png");
+        }
+        assertEquals("2020-02-20", db.ProfileDao().getProfileByProfileID(ordinaryID).observationDate);
     }
 
     private void assertLabelsDoNotOverlap(ViewGroup timeline) {
@@ -281,8 +379,10 @@ public class BreakdownActivityTest {
                     || activity.findViewById(R.id.breakdownPreviewControls).getVisibility() != View.VISIBLE) return false;
             assertText(activity, R.id.breakdownObservationDate, context.getString(R.string.breakdown_observation_today,
                     today.format(SentenceCalculator.DISPLAY_DATE)));
-            assertText(activity, R.id.minimumSentenceValue, context.getString(R.string.breakdown_balance_value,
-                    r.minimumText(today), r.minRemainingDays));
+            SentenceProjection.Range range = SentenceProjection.create(p, today);
+            assertText(activity, R.id.minimumSentenceValue, !today.isBefore(range.minimumCompletion)
+                    ? context.getString(R.string.breakdown_zero_balance)
+                    : context.getString(R.string.breakdown_balance_value, r.minimumText(today), r.minRemainingDays));
             assertText(activity, R.id.totalDaysValue, NumberFormat.getIntegerInstance().format(
                     ChronoUnit.DAYS.between(LocalDate.of(2018, 1, 10), today)));
             return true;
@@ -361,6 +461,11 @@ public class BreakdownActivityTest {
             assertText(activity, R.id.totalTastmValue, "300");
             assertText(activity, R.id.minimumSentenceValue, "5y, 11m, 21d (2182 days)");
             assertText(activity, R.id.maximumSentenceValue, "10y, 11m, 21d (4008 days)");
+            LocalDate preview = LocalDate.of(2020, 2, 20);
+            assertText(activity, R.id.breakdownMinimumReleaseDate,
+                    preview.plusDays(2182).format(SentenceCalculator.DISPLAY_DATE));
+            assertText(activity, R.id.breakdownMaximumReleaseDate,
+                    preview.plusDays(4008).format(SentenceCalculator.DISPLAY_DATE));
             return true;
         });
     }

@@ -63,6 +63,7 @@ public class newEntryActivity extends AppCompatActivity {
     // Shared website-style switches, commitment date and optional conviction date.
     private TriggerFormController triggerController;
     private AdditionalChargesController additionalChargesController;
+    private ProfilePhotoController photoController;
 
 
     @Override
@@ -261,6 +262,11 @@ public class newEntryActivity extends AppCompatActivity {
         // =====================================================
         // BUTTONS
         // =====================================================
+
+        photoController = new ProfilePhotoController(this, null, breakdown -> {
+            setResult(RESULT_OK, new Intent().putExtra(EXTRA_BREAKDOWN, breakdown));
+            finish();
+        });
 
         saveEntryButton.setOnClickListener(v -> {
 
@@ -632,9 +638,6 @@ public class newEntryActivity extends AppCompatActivity {
                 );
 
 
-        profile.image_path = "";
-
-
         // =====================================================
         // TRIGGER-SPECIFIC PROFILE DATA
         // =====================================================
@@ -677,28 +680,8 @@ public class newEntryActivity extends AppCompatActivity {
                 getString(R.string.breakdown_balance_value,
                         calculation.maximumText(observation), calculation.maxRemainingDays),
                 calculation);
-        Intent result = new Intent().putExtra(EXTRA_BREAKDOWN, breakdown);
-
-        saveEntryButton.setEnabled(false);
-        new Thread(() -> {
-            try {
-                profileDao.insertProfile(profile);
-            } catch (RuntimeException error) {
-                runOnUiThread(() -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    saveEntryButton.setEnabled(true);
-                    Snackbar.make(layout, R.string.profile_save_failed,
-                            Snackbar.LENGTH_LONG).show();
-                });
-                return;
-            }
-
-            runOnUiThread(() -> {
-                // Home opens the popup only after Room has successfully saved the profile.
-                setResult(RESULT_OK, result);
-                finish();
-            });
-        }).start();
+        // The retained controller saves the photo reference and profile together off the UI thread.
+        photoController.save(profile, true, breakdown);
     }
 
 

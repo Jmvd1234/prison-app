@@ -31,7 +31,7 @@ public class profileModel {
 
     private String suggestedAction;
 
-    private int image;
+    private String imagePath;
 
 
     public profileModel(
@@ -46,7 +46,7 @@ public class profileModel {
             long minRemainingDays,
             long maxRemainingDays,
             String suggestedAction,
-            int image) {
+            String imagePath) {
 
         this.profileID = profileID;
 
@@ -66,7 +66,7 @@ public class profileModel {
 
         this.suggestedAction = suggestedAction;
 
-        this.image = image;
+        this.imagePath = imagePath;
     }
 
 
@@ -146,7 +146,7 @@ public class profileModel {
         return suggestedAction;
     }
 
-    public int getImage() {
-        return image;
+    public String getImagePath() {
+        return imagePath;
     }
 }

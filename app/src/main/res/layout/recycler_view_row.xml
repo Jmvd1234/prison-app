@@ -45,6 +45,7 @@
                     android:id="@+id/imageView"
                     android:layout_width="125dp"
                     android:layout_height="125dp"
+                    android:scaleType="centerCrop"
 
                     android:clickable="true"
                     android:focusable="true"
@@ -148,17 +149,6 @@
 
                     android:paddingTop="10dp">
 
-
-                    <TextView
-                        android:id="@+id/exportPDFBox"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-
-                        android:gravity="start"
-
-                        android:text="Export PDF"
-                        android:textColor="@color/black"
-                        android:textStyle="bold|italic" />
 
 
                     <com.google.android.material.button.MaterialButton

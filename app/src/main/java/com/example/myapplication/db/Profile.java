@@ -50,6 +50,7 @@ public class Profile {
 
     public long userID;
 
+    // App-private relative photo filename; null/empty means the default placeholder.
     public String image_path;
 
     // Optional website conviction input; used only when TA is checked and CPI is not.
