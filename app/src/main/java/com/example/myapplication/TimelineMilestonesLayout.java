@@ -30,7 +30,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
     private static final class Label {
         TextView view;
         LocalDate date, displayedDate;
-        boolean minimum, maximum, reached;
+        boolean minimum, maximum, reached, today;
         float fraction, labelFraction, x, labelAnchorX;
         float markerOffset;
         int left, top, lane;
@@ -48,8 +48,8 @@ public final class TimelineMilestonesLayout extends ViewGroup {
 
     public TimelineMilestonesLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
-        neutral = ContextCompat.getColor(context, R.color.breakdown_button_green);
-        surface = ContextCompat.getColor(context, R.color.breakdown_surface);
+        neutral = ContextCompat.getColor(context, R.color.laya_primary);
+        surface = ContextCompat.getColor(context, R.color.laya_surface);
         minimumColor = ContextCompat.getColor(context, R.color.release_minimum_marker);
         maximumColor = ContextCompat.getColor(context, R.color.release_maximum_marker);
         halo = ContextCompat.getColor(context, R.color.release_marker_halo);
@@ -85,6 +85,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
                 title.append(getContext().getString(titleResource(point.kind)));
                 boolean minimum = point.kind == SentenceProjection.Kind.MINIMUM_ZERO;
                 boolean maximum = point.kind == SentenceProjection.Kind.MAXIMUM_ZERO;
+                label.today |= point.kind == SentenceProjection.Kind.TODAY;
                 label.minimum |= minimum;
                 label.maximum |= maximum;
                 title.setSpan(new ForegroundColorSpan(minimum ? minimumColor : maximum ? maximumColor : neutral),
@@ -96,13 +97,15 @@ public final class TimelineMilestonesLayout extends ViewGroup {
                     .inflate(R.layout.view_timeline_milestone, this, false);
             label.view.setText(title);
             label.view.setTag(label.date.toString());
-            label.view.setOnClickListener(view -> listener.select(label.date));
+            label.view.setOnClickListener(view -> listener.select(label.today ? LocalDate.now() : label.date));
             if (label.minimum) {
                 minimumLabel = label;
                 label.view.setId(R.id.timelineMinimumReleaseLabel);
             } else if (label.maximum) {
                 maximumLabel = label;
                 label.view.setId(R.id.timelineMaximumReleaseLabel);
+            } else if (label.today) {
+                label.view.setId(R.id.timelineTodayLabel);
             }
             addView(label.view);
             labels.add(label);
@@ -156,6 +159,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
             case LEA_ARREST: return R.string.breakdown_marker_arrest;
             case JAIL_COMMITMENT: return R.string.breakdown_marker_jail;
             case PRISON_COMMITMENT: return R.string.breakdown_marker_prison;
+            case TODAY: return R.string.breakdown_today;
             case MINIMUM_ZERO: return R.string.breakdown_marker_minimum;
             default: return R.string.breakdown_marker_maximum;
         }

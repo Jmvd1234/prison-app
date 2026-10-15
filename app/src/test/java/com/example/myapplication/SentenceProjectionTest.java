@@ -3,6 +3,7 @@ package com.example.myapplication;
 import com.example.myapplication.db.Profile;
 import org.junit.Test;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import static org.junit.Assert.*;
 
 public class SentenceProjectionTest {
@@ -49,7 +50,7 @@ public class SentenceProjectionTest {
         }
     }
 
-    @Test public void monthStepsRetainExactTodayAndCompletionDatesWithoutDuplicates() {
+    @Test public void dailyStepsRetainTodayAndCompletionDatesWithoutGapsOrDuplicates() {
         Profile p = profile();
         LocalDate today = LocalDate.of(2018, 7, 9);
         SentenceProjection.Range r = SentenceProjection.create(p, today);
@@ -58,7 +59,8 @@ public class SentenceProjectionTest {
         assertTrue(r.dates.contains(r.minimumCompletion));
         assertTrue(r.dates.contains(LocalDate.of(2018, 6, 20)));
         assertTrue(r.dates.contains(LocalDate.of(2018, 7, 20)));
-        for (int i = 1; i < r.dates.size(); i++) assertTrue(r.dates.get(i).isAfter(r.dates.get(i - 1)));
+        for (int i = 1; i < r.dates.size(); i++) assertEquals(r.dates.get(i - 1).plusDays(1), r.dates.get(i));
+        assertEquals(ChronoUnit.DAYS.between(r.start, r.end) + 1, r.dates.size());
         assertEquals(r.start, r.dates.get(0));
         assertEquals(r.end, r.dates.get(r.dates.size() - 1));
         assertEquals(r.start.plusDays(result(p, r.start).maxRemainingDays), r.end);
@@ -69,16 +71,27 @@ public class SentenceProjectionTest {
         SentenceProjection.Range r = SentenceProjection.create(profile(), today);
         assertTrue(r.maximumCompletion.isBefore(today));
         assertEquals(today, r.end);
+        assertEquals(1, r.milestones.stream().filter(m -> m.kind == SentenceProjection.Kind.TODAY
+                && m.date.equals(today)).count());
+        SentenceProjection.Range nextDay = SentenceProjection.create(profile(), today.plusDays(1));
+        assertTrue(nextDay.milestones.stream().anyMatch(m -> m.kind == SentenceProjection.Kind.TODAY
+                && m.date.equals(today.plusDays(1))));
         assertEquals(today, r.dates.get(r.dates.size() - 1));
     }
 
-    @Test public void monthEndsStayAnchoredInsteadOfDriftingAfterFebruary() {
+    @Test public void dailyFebruaryIncludesLeapDayWhileCreditsStayAnchoredToCommitment() {
         Profile p = profile();
         p.leaArrestDate = p.commitmentDate = "2020-01-31";
         SentenceProjection.Range r = SentenceProjection.create(p, LocalDate.of(2020, 2, 10));
         assertTrue(r.dates.contains(LocalDate.of(2020, 2, 29)));
         assertTrue(r.dates.contains(LocalDate.of(2020, 3, 31)));
-        assertFalse(r.dates.contains(LocalDate.of(2020, 3, 29)));
+        assertTrue(r.dates.contains(LocalDate.of(2020, 3, 29)));
+        assertEquals(0, result(p, LocalDate.of(2020, 2, 28)).gctaDays);
+        assertEquals(20, result(p, LocalDate.of(2020, 2, 29)).gctaDays);
+        assertEquals(20, result(p, LocalDate.of(2020, 3, 30)).gctaDays);
+        assertEquals(40, result(p, LocalDate.of(2020, 3, 31)).gctaDays);
+        assertEquals(1.0 / ChronoUnit.DAYS.between(r.start, r.end),
+                r.positionOf(LocalDate.of(2020, 2, 29)) - r.positionOf(LocalDate.of(2020, 2, 28)), 0.000001);
     }
 
     @Test public void taOnlyUsesConvictionAnniversariesAndKeepsManualPreviewOnRestore() {
@@ -86,11 +99,34 @@ public class SentenceProjectionTest {
         p.disqualifiedForTimeAllowances = true;
         p.convictionDate = "2018-08-05";
         LocalDate preview = LocalDate.of(2018, 7, 9);
-        SentenceProjection.Range r = SentenceProjection.create(p, LocalDate.of(2018, 7, 10), preview);
+        SentenceProjection.Range r = SentenceProjection.create(p, LocalDate.of(2018, 7, 10));
         assertTrue(r.dates.contains(LocalDate.of(2018, 9, 5)));
         assertTrue(r.dates.contains(preview));
         assertEquals("2020-02-20", p.observationDate);
         assertEquals("2018-08-05", p.convictionDate);
+    }
+
+    @Test public void longDailyRangeHasExactIndexesAndCannotBeMutated() {
+        Profile p = profile();
+        p.leaArrestDate = p.commitmentDate = "2000-01-01";
+        p.minYears = 1;
+        p.maxYears = 100;
+        p.disqualifiedForCPI = true;
+        SentenceProjection.Range r = SentenceProjection.create(p, LocalDate.of(2026, 10, 14));
+        LocalDate leapDay = LocalDate.of(2096, 2, 29);
+        int index = (int) ChronoUnit.DAYS.between(r.start, leapDay);
+        assertEquals(index, r.dates.indexOf(leapDay));
+        assertEquals(index, r.dates.lastIndexOf(leapDay));
+        assertEquals(leapDay, r.dates.get(index));
+        assertEquals(-1, r.dates.indexOf(r.end.plusDays(1)));
+        assertFalse(r.dates.contains(r.start.minusDays(1)));
+        assertFalse(r.dates.contains(null));
+        assertEquals(0f, r.positionOf(r.start.minusDays(1)), 0f);
+        assertEquals(1f, r.positionOf(r.end.plusDays(1)), 0f);
+        try { r.dates.get(r.dates.size()); fail("Out-of-range date must fail"); }
+        catch (IndexOutOfBoundsException expected) { }
+        try { r.dates.set(index, r.start); fail("Daily dates must remain immutable"); }
+        catch (UnsupportedOperationException expected) { }
     }
 
     @Test public void mappingIgnoresLegacyDateAndNeverWritesToProfile() {
@@ -113,6 +149,8 @@ public class SentenceProjectionTest {
         SentenceProjection.Range r = SentenceProjection.create(p, start);
         assertEquals(start, r.maximumCompletion);
         assertEquals(1, r.dates.size());
+        assertTrue(r.milestones.stream().anyMatch(m -> m.kind == SentenceProjection.Kind.TODAY
+                && m.date.equals(start)));
         p = profile();
         p.maxYears = 10000;
         try {
@@ -131,7 +169,7 @@ public class SentenceProjectionTest {
         SentenceProjection.Range r = SentenceProjection.create(p, LocalDate.of(2020, 1, 1));
         assertEquals(LocalDate.of(2018, 1, 10), r.start);
         assertTrue(r.dates.contains(LocalDate.of(2018, 2, 10)));
-        assertEquals(4, r.milestones.size());
+        assertEquals(5, r.milestones.size());
         assertEquals(SentenceProjection.Kind.LEA_ARREST, r.milestones.get(0).kind);
         assertEquals(SentenceProjection.Kind.JAIL_COMMITMENT, r.milestones.get(1).kind);
         assertEquals(r.commitment, r.milestones.get(1).date);
@@ -145,7 +183,7 @@ public class SentenceProjectionTest {
         p.leaArrestDate = "";
         SentenceProjection.Range r = SentenceProjection.create(p, LocalDate.of(2020, 1, 1));
         assertEquals(r.commitment, r.start);
-        assertEquals(3, r.milestones.size());
+        assertEquals(4, r.milestones.size());
         assertFalse(r.milestones.stream().anyMatch(m -> m.kind == SentenceProjection.Kind.LEA_ARREST));
     }
 
@@ -161,16 +199,17 @@ public class SentenceProjectionTest {
         assertTrue(r.milestones.stream().anyMatch(m -> m.kind == SentenceProjection.Kind.MAXIMUM_ZERO));
     }
 
-    @Test public void futureConvictionDiscontinuityDoesNotHideAnEarlierLeaZero() {
+    @Test public void laterPrisonStartDoesNotCreateNegativeCreditsOrHideEarlierRelease() {
         Profile p = profile();
         p.minYears = p.maxYears = 0;
         p.minDays = 10;
         p.maxDays = 20;
         p.disqualifiedForTimeAllowances = true;
-        p.convictionDate = "2020-01-01";
+        p.prisonTransferDate = "2020-01-01";
         SentenceProjection.Range r = SentenceProjection.create(p, LocalDate.of(2020, 1, 1));
         assertEquals(LocalDate.of(2018, 1, 20), r.minimumCompletion);
         assertEquals(LocalDate.of(2018, 1, 30), r.maximumCompletion);
-        assertTrue(result(p, r.commitment).maxRemainingDays > 0);
+        assertTrue(result(p, r.commitment).maxRemainingDays < 0);
+        assertEquals(0, result(p, r.commitment).gctaDays);
     }
 }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingHorizontal="24dp"
+        android:paddingTop="12dp" android:paddingBottom="8dp">
+        <TextView android:id="@+id/deleteLoginMessage"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textColor="@color/laya_text" android:textSize="16sp"/>
+        <LinearLayout android:id="@+id/deleteLoginPasswordFields"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:orientation="vertical" android:visibility="gone">
+            <TextView style="@style/LoginFieldLabel" android:labelFor="@id/deleteLoginPassword"
+                android:text="@string/login_delete_password_label"/>
+            <androidx.appcompat.widget.AppCompatEditText android:id="@+id/deleteLoginPassword"
+                style="@style/LoginTextField" android:hint="@string/login_password_hint"
+                android:importantForAutofill="no" android:inputType="textPassword"
+                android:maxLength="256" android:imeOptions="actionDone" android:saveEnabled="false"/>
+        </LinearLayout>
+        <ProgressBar android:id="@+id/deleteLoginProgress"
+            android:layout_width="24dp" android:layout_height="24dp"
+            android:layout_gravity="center_horizontal" android:layout_marginTop="12dp"
+            android:contentDescription="@string/login_working" android:visibility="gone"/>
+        <TextView android:id="@+id/deleteLoginError"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:accessibilityLiveRegion="polite"
+            android:textColor="@color/laya_danger" android:textSize="14sp" android:visibility="gone"/>
+    </LinearLayout>
+</ScrollView>

@@ -18,6 +18,27 @@ public abstract class ProfileDao {
     @Query("DELETE FROM ProfileCharge WHERE profileID = :profileID")
     protected abstract void deleteChargeRows(int profileID);
 
+    @Insert protected abstract void insertDeductionRows(List<ProfileDeduction> rows);
+    @Query("DELETE FROM ProfileDeduction WHERE profileID = :profileID")
+    protected abstract void deleteDeductionRows(int profileID);
+
+    /** Atomic, owner-checked save. Editing other profile fields never replaces these rows. */
+    @Transaction
+    public Profile saveDeductionMonths(int profileID, long userID,
+            List<com.example.myapplication.DeductionMonth> months) {
+        Profile profile = getProfileByProfileID(profileID);
+        if (profile == null || profile.userID != userID) throw new IllegalStateException("Profile no longer available.");
+        com.example.myapplication.SentenceCalculator.Input input = com.example.myapplication.ProfileCalculationMapper.from(profile);
+        input.deductionMonths = months;
+        com.example.myapplication.DeductionMonth.totals(input, java.time.LocalDate.now());
+        List<ProfileDeduction> rows = new ArrayList<>();
+        for (com.example.myapplication.DeductionMonth month : months) rows.add(ProfileDeduction.from(profileID, month));
+        // Monthly rows override the manual value without erasing it; an empty list restores it.
+        deleteDeductionRows(profileID);
+        insertDeductionRows(rows);
+        return getProfileByProfileID(profileID);
+    }
+
     @Transaction
     @Query("SELECT * FROM Profile WHERE userID = :userID")
     protected abstract List<ProfileWithCharges> loadProfiles(long userID);
@@ -59,6 +80,9 @@ public abstract class ProfileDao {
 
     @Query("SELECT COUNT(*) FROM Profile WHERE image_path = :path")
     public abstract int countProfilesWithPhoto(String path);
+
+    @Query("SELECT DISTINCT image_path FROM Profile WHERE userID = :userID AND image_path IS NOT NULL")
+    public abstract List<String> getPhotoPathsByUserID(long userID);
 
     private static List<ProfileCharge> snapshot(Profile profile) {
         // Also supports callers building a one-charge profile from the first form row.

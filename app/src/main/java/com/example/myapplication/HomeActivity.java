@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,8 +13,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 public class HomeActivity extends AppCompatActivity {
+    public static final String EXTRA_LOGIN_NAME = "login_profile_name";
 
     ImageButton homeBackButton;
 
@@ -44,7 +47,17 @@ public class HomeActivity extends AppCompatActivity {
             return insets;
         });
         homeBackButton = findViewById(R.id.homeBackButton);
-        homeBackButton.setOnClickListener(v -> {finish();});
+        homeBackButton.setContentDescription(getString(R.string.login_switch_profile));
+        homeBackButton.setOnClickListener(this::logOut);
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override public void handleOnBackPressed() { logOut(null); }
+        });
+        String profileName = getIntent().getStringExtra(EXTRA_LOGIN_NAME);
+        if (profileName != null) {
+            TextView label = findViewById(R.id.homeLoginProfileName);
+            label.setText(profileName);
+            label.setVisibility(View.VISIBLE);
+        }
 
     }
 
@@ -64,12 +77,12 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     public void logOut(View v){
-        Intent i = new Intent(this, MainActivity.class);
-        startActivity(i);
         getSharedPreferences("user_session", MODE_PRIVATE)
                 .edit()
                 .remove("currentUserID")
                 .apply();
+        startActivity(new Intent(this, MainActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
         finish();
     }
 }

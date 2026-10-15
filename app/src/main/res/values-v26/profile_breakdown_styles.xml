@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
-
     <style name="BreakdownCell">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
@@ -9,7 +8,7 @@
         <item name="android:paddingHorizontal">6dp</item>
         <item name="android:paddingVertical">10dp</item>
         <item name="android:gravity">end|center_vertical</item>
-        <item name="android:textColor">@color/breakdown_ink</item>
+        <item name="android:textColor">@color/laya_primary</item>
         <item name="android:textSize">14sp</item>
         <item name="android:fontFeatureSettings">tnum</item>
     </style>

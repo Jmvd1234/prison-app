@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/laya_card"
+    android:paddingLeft="16dp"
+    android:paddingTop="13dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="19dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="80dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:importantForAccessibility="no">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/deleteLoginProfileButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="15dp"
+            android:contentDescription="@string/login_delete_action"
+            app:srcCompat="@drawable/ic_deduction_trash"
+            app:tint="@color/laya_danger"/>
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@null"
+            app:srcCompat="@drawable/outline_account_circle_24"
+            app:tint="@color/laya_primary" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="16dp"
+            android:importantForAccessibility="noHideDescendants"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/loginProfileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/laya_text"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                tools:text="Alex" />
+
+            <TextView
+                android:id="@+id/loginProfileSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/laya_label"
+                android:textSize="13sp"
+                tools:text="Password required" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/loginProfileStatusIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@null"
+            app:tint="@color/laya_primary"
+            tools:src="@drawable/ic_profile_lock" />
+    </LinearLayout>
+</FrameLayout>

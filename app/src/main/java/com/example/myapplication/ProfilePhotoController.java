@@ -29,7 +29,6 @@ final class ProfilePhotoController {
         View remove = activity.findViewById(R.id.removeProfilePhoto);
         View progress = activity.findViewById(R.id.profilePhotoProgress);
         View save = activity.findViewById(R.id.saveEntryButton);
-        View delete = activity.findViewById(R.id.deleteEntryButton);
         View root = activity.findViewById(R.id.main);
         ActivityResultLauncher<PickVisualMediaRequest> picker = activity.registerForActivityResult(
                 new ActivityResultContracts.PickVisualMedia(), model::select);
@@ -55,7 +54,6 @@ final class ProfilePhotoController {
             remove.setEnabled(!state.busy);
             progress.setVisibility(state.busy ? View.VISIBLE : View.GONE);
             save.setEnabled(!state.busy);
-            delete.setEnabled(!state.busy);
         });
         model.error.observe(activity, message -> {
             if (message == null) return;
@@ -68,5 +66,4 @@ final class ProfilePhotoController {
     }
 
     void save(Profile profile, boolean insert, Bundle result) { model.save(profile, insert, result); }
-    void delete(Profile profile) { model.delete(profile); }
 }

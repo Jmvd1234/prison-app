@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="deduction_title">Deduction Dates</string>
+    <string name="deduction_subtitle">Adjust deduction dates to refine calculations (optional)</string>
+    <string name="deduction_add">Add Month</string>
+    <string name="deduction_dialog_title">Add Deduction Month</string>
+    <string name="deduction_month_label">Month</string>
+    <string name="deduction_year_label">Year</string>
+    <string name="deduction_year_hint">Enter year (e.g., 2020)</string>
+    <string name="deduction_search">Search by month or year…</string>
+    <string name="deduction_search_compact">Search…</string>
+    <string name="deduction_clear_search">Clear search</string>
+    <string name="deduction_none">No deduction months added yet.</string>
+    <string name="deduction_no_matches">No matching deductions found.</string>
+    <string name="deduction_tier">Tier %1$d • Month %2$d</string>
+    <string name="deduction_earned_on">Applied from %1$s</string>
+    <string name="deduction_ineligible">No eligible credits for this month</string>
+    <string name="deduction_no_allowances">No GCTA or TASTM is earned under the current inputs.</string>
+    <string name="deduction_total">TOTAL</string>
+    <string name="deduction_selected">Selected deductions:</string>
+    <string name="deduction_count">(%1$d months)</string>
+    <string name="deduction_applied">At observation: %1$s days</string>
+    <string name="deduction_recalculate">Recalculate with Adjustments</string>
+    <string name="deduction_saving">Saving adjustments…</string>
+    <string name="deduction_saved">Adjustments saved</string>
+    <string name="deduction_pending">Recalculate to save these changes.</string>
+    <string name="deduction_save_failed">Could not save adjustments. Please try again.</string>
+    <string name="deduction_manual_overridden">Manual deduction: %1$d days (used only when no months are added).</string>
+    <string name="deduction_edit_hint">Using Deduction Dates. Remove all months to edit this value.</string>
+    <string name="deduction_showing">Showing %1$d–%2$d of %3$d months</string>
+    <string name="deduction_filtered">Showing %1$d–%2$d of %3$d filtered (Total: %4$d)</string>
+    <string name="deduction_page">Page %1$d of %2$d</string>
+    <string name="deduction_previous">Previous page</string>
+    <string name="deduction_next">Next page</string>
+    <string name="deduction_remove">Remove %1$s</string>
+    <string name="deduction_gcta_check">Deduct GCTA for %1$s</string>
+    <string name="deduction_tastm_check">Deduct TASTM for %1$s</string>
+    <string name="deduction_duplicate">Duplicate Month and Year is not allowed. Please select a different Month or Year.</string>
+    <string name="deduction_before_start">Select a month on or after the allowance start month.</string>
+    <string name="deduction_year_invalid">Enter a valid year from 1 to 9999.</string>
+    <string name="deduction_range_invalid">Select a month within the 200-year calculation range.</string>
+    <string name="deduction_preview">%1$s • Month %2$d • Tier %3$d • GCTA: %4$d days, TASTM: 15 days</string>
+    <string name="deduction_cancel">Cancel</string>
+    <string name="deduction_close">Close</string>
+    <string name="deduction_applied_label">Deductions</string>
+    <string-array name="deduction_months">
+        <item>Select month…</item><item>January</item><item>February</item><item>March</item>
+        <item>April</item><item>May</item><item>June</item><item>July</item><item>August</item>
+        <item>September</item><item>October</item><item>November</item><item>December</item>
+    </string-array>
+    <style name="DeductionOutlineButton" parent="AppTextButton">
+        <item name="strokeColor">@color/laya_border</item><item name="strokeWidth">1dp</item>
+        <item name="backgroundTint">@color/laya_surface</item><item name="android:textColor">@color/laya_text</item>
+        <item name="android:textAllCaps">false</item><item name="android:minHeight">48dp</item>
+    </style>
+    <style name="DeductionLabel">
+        <item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/laya_label</item><item name="android:textSize">12sp</item>
+    </style>
+    <style name="DeductionValue" parent="DeductionLabel">
+        <item name="android:textColor">@color/laya_primary</item><item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item><item name="android:fontFamily">monospace</item>
+    </style>
+    <style name="DeductionField" parent="AppEditText">
+        <item name="android:layout_width">match_parent</item><item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">48dp</item><item name="android:textSize">14sp</item>
+    </style>
+</resources>

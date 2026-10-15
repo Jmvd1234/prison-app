@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/login_background"
+    android:background="@color/laya_background"
     tools:context=".DashboardActivity">
-
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
@@ -16,7 +16,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -26,15 +25,12 @@
             android:paddingHorizontal="10dp"
             android:paddingVertical="5dp"
             android:text="@string/app_name"
-            android:backgroundTint="@color/app_outline"
-            android:textColor="@color/black"
+            android:textColor="@color/laya_text"
             android:textStyle="bold" />
-
         <Space
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_weight="1" />
-
         <ImageButton
             android:id="@+id/homeButton"
             android:layout_width="30dp"
@@ -43,8 +39,10 @@
             android:layout_marginEnd="20dp"
             android:background="@null"
             android:onClick="goHome"
-            android:src="@drawable/outline_bungalow_24" />
-
+            android:src="@drawable/outline_bungalow_24"
+            app:tint="@color/laya_primary"
+            android:elevation="0dp"
+            android:stateListAnimator="@null" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="wrap_content"
@@ -52,17 +50,15 @@
         android:layout_marginVertical="10dp"
         android:gravity="center"
         android:orientation="horizontal"
-        app:layout_constraintBottom_toTopOf="@id/recyclerLayout"
         app:layout_constraintTop_toBottomOf="@id/topBar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
+        app:layout_constraintStart_toStartOf="parent"
+        android:id="@+id/sortControls">
         <Spinner
             android:id="@+id/sortDropdown"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp" />
-
         <Spinner
             android:id="@+id/orderDropdown"
             android:layout_width="wrap_content"
@@ -71,22 +67,22 @@
     </LinearLayout>
     <LinearLayout
         android:id="@+id/recyclerLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="600dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:gravity="center"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="75dp">
-
+        android:layout_marginTop="10dp"
+        android:layout_marginHorizontal="8dp"
+        app:layout_constraintTop_toBottomOf="@id/sortControls"
+        app:layout_constraintWidth_max="400dp">
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/profileRecyclerView"
-            android:layout_width="400dp"
-            android:layout_height="600dp" />
-
-
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingBottom="16dp"
+            android:clipToPadding="false" />
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

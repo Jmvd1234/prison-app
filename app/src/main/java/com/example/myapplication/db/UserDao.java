@@ -13,6 +13,18 @@ public interface UserDao {
     @Query("SELECT * FROM User")
     List<User> getAllUsers();
 
+    @Query("SELECT * FROM User ORDER BY isGuest DESC, username COLLATE NOCASE, userID")
+    List<User> getLoginProfiles();
+
+    @Query("SELECT * FROM User WHERE isGuest = 1 LIMIT 1")
+    User getGuest();
+
+    @Query("SELECT COUNT(*) FROM User WHERE username = :username COLLATE NOCASE")
+    int countLoginNames(String username);
+
+    @Query("UPDATE User SET passwordHash = :hash, password = NULL WHERE userID = :id")
+    void upgradePassword(int id, String hash);
+
     @Insert
     long insertUser(User user);
 

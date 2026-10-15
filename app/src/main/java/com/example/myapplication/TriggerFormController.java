@@ -1,30 +1,36 @@
 package com.example.myapplication;
 
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.myapplication.db.Profile;
 import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.CompositeDateValidator;
+import com.google.android.material.datepicker.DateValidatorPointBackward;
+import com.google.android.material.datepicker.DateValidatorPointForward;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Shared website-style triggers; exactly one optional conviction field. */
+/** Shared custody dates and website-style triggers for Add and Edit Entry. */
 public final class TriggerFormController {
     private static final String KEY = "sentence_triggers_v1";
-    private static final String CONVICTION = "Date of conviction, if any";
+    private static final String JAIL_COMMITMENT = "Jail Commitment Date";
+    private static final String PRISON_TRANSFER = "Prison Commitment Date";
     private final AppCompatActivity activity;
     private final MaterialSwitch notJail, cpi, ta;
-    private final EditText commitment, conviction;
+    private final EditText commitment, prisonTransfer;
+    private final View clearPrisonTransfer;
+    private final TextView prisonTransferLabel;
     private final TextView commitmentLabel;
-    private final LinearLayout details;
     private final View stalInput;
     private boolean binding = true;
 
@@ -36,30 +42,18 @@ public final class TriggerFormController {
         ta = required(R.id.disqualifiedTASwitch);
         commitment = required(R.id.inputCommitmentDate);
         commitmentLabel = required(R.id.commitmentDateLabel);
+        prisonTransfer = required(R.id.inputPrisonTransferDate);
+        clearPrisonTransfer = required(R.id.clearPrisonTransferDate);
+        prisonTransferLabel = required(R.id.prisonTransferLabel);
+        clearPrisonTransfer.setOnClickListener(v -> {
+            prisonTransfer.setText("");
+            prisonTransfer.setError(null);
+        });
         stalInput = activity.findViewById(R.id.inputSTAL);
-        details = container;
-        details.setOrientation(LinearLayout.VERTICAL);
-        TextView label = new TextView(activity);
-        label.setText(CONVICTION);
-        details.addView(label);
-        LinearLayout row = new LinearLayout(activity);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        conviction = new EditText(activity);
-        conviction.setHint("Select date");
-        conviction.setContentDescription(CONVICTION);
-        conviction.setInputType(InputType.TYPE_NULL);
-        conviction.setFocusable(false);
-        conviction.setClickable(true);
-        row.addView(conviction, new LinearLayout.LayoutParams(0, -2, 1));
-        Button clear = new Button(activity);
-        clear.setText("Clear");
-        clear.setContentDescription("Clear conviction date");
-        clear.setOnClickListener(v -> conviction.setText(""));
-        row.addView(clear);
-        details.addView(row);
-        details.setVisibility(View.GONE);
+        container.removeAllViews();
+        container.setVisibility(View.GONE);
         // Restore these together from our Bundle, not independently from View state.
-        for (View view : new View[]{notJail, cpi, ta, commitment, conviction}) {
+        for (View view : new View[]{notJail, cpi, ta, commitment, prisonTransfer}) {
             view.setSaveEnabled(false);
         }
         notJail.setOnCheckedChangeListener((button, checked) -> {
@@ -73,25 +67,19 @@ public final class TriggerFormController {
             if (binding) return;
             if (checked && !cpi.isChecked()) confirm(ta, false); else refreshState();
         });
-        commitment.setOnClickListener(v -> pickDate(commitment, commitmentLabel.getText().toString()));
-        conviction.setOnClickListener(v -> pickDate(conviction, CONVICTION));
+        commitment.setOnClickListener(v -> pickDate(commitment, JAIL_COMMITMENT));
+        prisonTransfer.setOnClickListener(v -> pickDate(prisonTransfer, PRISON_TRANSFER));
     }
 
     private void confirm(MaterialSwitch target, boolean forCpi) {
         binding = true;
         target.setChecked(false);
         binding = false;
-        String message = forCpi
-                ? "Confirm CPI disqualification from the court record before continuing. "
-                    + "This also selects Time Allowance disqualification and changes the date field "
-                    + "to Prison Commitment Date."
-                : "Confirm time-allowance disqualification from the court record before continuing. "
-                    + "If there is a conviction, enter its date in the optional field.";
         new MaterialAlertDialogBuilder(activity)
-                .setTitle(forCpi ? "Confirm CPI disqualification" : "Confirm Time Allowance disqualification")
-                .setMessage(message)
-                .setNegativeButton("Cancel", (dialog, which) -> refreshState())
-                .setPositiveButton("Confirmed", (dialog, which) -> {
+                .setTitle(R.string.trigger_warning_title)
+                .setMessage(forCpi ? R.string.trigger_warning_cpi : R.string.trigger_warning_time_allowances)
+                .setNegativeButton(R.string.trigger_warning_cancel, (dialog, which) -> refreshState())
+                .setPositiveButton(R.string.trigger_warning_confirm, (dialog, which) -> {
                     binding = true;
                     target.setChecked(true);
                     binding = false;
@@ -108,8 +96,8 @@ public final class TriggerFormController {
             notJail.setChecked(p.notCommittedToJail);
             cpi.setChecked(p.disqualifiedForCPI);
             ta.setChecked(p.disqualifiedForTimeAllowances);
-            commitment.setText(ProfileCalculationMapper.commitmentDate(p));
-            conviction.setText(safe(p.convictionDate));
+            commitment.setText(ProfileCalculationMapper.jailInputDate(p));
+            prisonTransfer.setText(ProfileCalculationMapper.prisonInputDate(p));
         }
         Bundle state = savedInstanceState == null ? null : savedInstanceState.getBundle(KEY);
         if (state != null) {
@@ -117,14 +105,21 @@ public final class TriggerFormController {
             cpi.setChecked(state.getBoolean("cpi"));
             ta.setChecked(state.getBoolean("ta"));
             String oldDateKey = prisonMode() ? "prison" : "jail";
-            commitment.setText(safe(state.getString("commitment", state.getString(oldDateKey))));
-            conviction.setText(safe(state.getString("conviction", state.getString("finality"))));
+            String savedCommitment = safe(state.getString("commitment", state.getString(oldDateKey)));
+            if (state.getBoolean("separateCustodyDates") || !prisonMode()) {
+                commitment.setText(savedCommitment);
+                prisonTransfer.setText(safe(state.getString("prisonTransfer")));
+            } else {
+                // Move an old relabelled-field draft into its actual prison input.
+                commitment.setText("");
+                prisonTransfer.setText(savedCommitment);
+            }
         }
         binding = false;
         refreshState();
-        rebindPicker(commitment, "Jail Commitment Date");
-        rebindPicker(commitment, "Prison Commitment Date");
-        rebindPicker(conviction, CONVICTION);
+        rebindPicker(commitment, JAIL_COMMITMENT);
+        rebindPicker(prisonTransfer, PRISON_TRANSFER);
+        rebindPicker(prisonTransfer, "Prison Commitment Date, if any");
     }
 
     private boolean prisonMode() {
@@ -135,43 +130,74 @@ public final class TriggerFormController {
         binding = true;
         if (cpi.isChecked()) ta.setChecked(true);
         ta.setEnabled(!cpi.isChecked());
-        String label = prisonMode() ? "Prison Commitment Date" : "Jail Commitment Date";
-        commitmentLabel.setText(label);
-        commitment.setContentDescription(label);
-        // Relabel the single field without replacing its entered value, as on the website.
-        details.setVisibility(SentenceCalculator.usesConvictionDate(cpi.isChecked(), ta.isChecked())
-                ? View.VISIBLE : View.GONE);
+        boolean jailEnabled = !notJail.isChecked();
+        String jailLabel = cpi.isChecked() && jailEnabled
+                ? activity.getString(R.string.jail_commitment_optional) : JAIL_COMMITMENT;
+        commitmentLabel.setText(jailLabel);
+        commitment.setContentDescription(jailLabel);
+        commitment.setEnabled(jailEnabled);
+        commitmentLabel.setAlpha(jailEnabled ? 1f : 0.5f);
+        commitment.setAlpha(jailEnabled ? 1f : 0.5f);
+        if (!jailEnabled) commitment.setError(null);
+        // CPI keeps jail optional even though it also forces the TA switch on.
+        prisonTransfer.setEnabled(true);
+        clearPrisonTransfer.setEnabled(true);
+        prisonTransferLabel.setAlpha(1f);
+        prisonTransfer.setAlpha(1f);
+        String prisonLabel = prisonMode() ? PRISON_TRANSFER
+                : activity.getString(R.string.prison_transfer_label);
+        prisonTransferLabel.setText(prisonLabel);
+        prisonTransfer.setContentDescription(prisonLabel);
         if (stalInput != null) stalInput.setEnabled(true);
         binding = false;
     }
 
     public void writeToProfile(Profile p) {
-        SentenceCalculator.requiredDate(text(commitment), commitmentLabel.getText().toString());
-        if (SentenceCalculator.usesConvictionDate(cpi.isChecked(), ta.isChecked())) {
-            SentenceCalculator.optionalDate(text(conviction), CONVICTION);
-        }
+        String jailText = text(commitment), prisonText = text(prisonTransfer);
+        LocalDate jail = notJail.isChecked() ? null : cpi.isChecked()
+                ? SentenceCalculator.optionalDate(jailText, JAIL_COMMITMENT)
+                : SentenceCalculator.requiredDate(jailText, JAIL_COMMITMENT);
+        LocalDate prison = prisonMode()
+                ? SentenceCalculator.requiredDate(prisonText, PRISON_TRANSFER)
+                : SentenceCalculator.optionalDate(prisonText, PRISON_TRANSFER);
+        LocalDate today = LocalDate.now();
+        LocalDate arrest = SentenceCalculator.optionalDate(text(required(R.id.inputLEADate)), "LEA arrest date");
+        if (arrest != null && arrest.isAfter(today)) throw new IllegalArgumentException("LEA arrest cannot be after today.");
+        validateCustodyDate(jail, arrest, today, "Jail commitment");
+        validateCustodyDate(prison, arrest, today, "Prison commitment");
+        if (jail != null) SentenceCalculator.validatePrisonTransfer(jail, prison, today);
+
         p.notCommittedToJail = notJail.isChecked();
         p.disqualifiedForCPI = cpi.isChecked();
         p.disqualifiedForTimeAllowances = cpi.isChecked() || ta.isChecked();
-        p.commitmentDate = text(commitment);
-        if (prisonMode()) p.prisonCommitmentDate = p.commitmentDate;
-        else p.jailCommitmentDate = p.commitmentDate;
-        // Preserve the optional draft while hidden; the mapper ignores it in other modes.
-        p.convictionDate = text(conviction).isEmpty() ? null : text(conviction);
-        // Retired metadata stays untouched in Room; no schema change or destructive reset.
+        p.separateCustodyDates = true;
+        // CPI uses prison as its calculation anchor, even when an earlier jail date is recorded.
+        p.commitmentDate = prisonMode() ? prisonText : jailText;
+        p.jailCommitmentDate = jailText.isEmpty() ? null : jailText;
+        p.prisonCommitmentDate = prisonText.isEmpty() ? null : prisonText;
+        p.prisonTransferDate = prisonText.isEmpty() ? null : prisonText;
+        p.convictionDate = null; // Retired UI input; TA's allowance clock now uses the prison date.
+    }
+
+    private static void validateCustodyDate(LocalDate date, LocalDate arrest, LocalDate today, String label) {
+        if (date == null) return;
+        if (date.isAfter(today)) throw new IllegalArgumentException(label + " cannot be after today.");
+        if (arrest != null && date.isBefore(arrest)) throw new IllegalArgumentException(label + " cannot precede arrest.");
     }
 
     public void saveInstanceState(Bundle outState) {
         Bundle state = new Bundle();
+        state.putBoolean("separateCustodyDates", true);
         state.putBoolean("notJail", notJail.isChecked());
         state.putBoolean("cpi", cpi.isChecked());
         state.putBoolean("ta", ta.isChecked());
         state.putString("commitment", text(commitment));
-        state.putString("conviction", text(conviction));
+        state.putString("prisonTransfer", text(prisonTransfer));
         outState.putBundle(KEY, state);
     }
 
     private void pickDate(EditText target, String title) {
+        if (!target.isEnabled()) return;
         String tag = "TRIGGER_DATE_" + title;
         if (activity.getSupportFragmentManager().isStateSaved()
                 || activity.getSupportFragmentManager().findFragmentByTag(tag) != null) return;
@@ -180,8 +206,27 @@ public final class TriggerFormController {
             LocalDate current = SentenceCalculator.optionalDate(text(target), title);
             if (current != null) selection = current.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
         } catch (IllegalArgumentException ignored) { }
-        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
-                .setTitleText(title).setSelection(selection).build();
+        MaterialDatePicker.Builder<Long> builder = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(title).setSelection(selection);
+        {
+            long today = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+            List<CalendarConstraints.DateValidator> validators = new ArrayList<>();
+            validators.add(DateValidatorPointBackward.before(today));
+            try {
+                LocalDate earliest = SentenceCalculator.optionalDate(
+                        text(required(R.id.inputLEADate)), "LEA arrest date");
+                if (target == prisonTransfer && !notJail.isChecked()) {
+                    LocalDate jail = SentenceCalculator.optionalDate(text(commitment), JAIL_COMMITMENT);
+                    if (jail != null && (earliest == null || jail.plusDays(1).isAfter(earliest))) earliest = jail.plusDays(1);
+                }
+                if (earliest != null) {
+                    validators.add(DateValidatorPointForward.from(earliest.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()));
+                }
+            } catch (IllegalArgumentException ignored) { }
+            builder.setCalendarConstraints(new CalendarConstraints.Builder()
+                    .setEnd(today).setValidator(CompositeDateValidator.allOf(validators)).build());
+        }
+        MaterialDatePicker<Long> picker = builder.build();
         connectPicker(picker, target);
         picker.show(activity.getSupportFragmentManager(), tag);
     }

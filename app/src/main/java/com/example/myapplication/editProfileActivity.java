@@ -46,7 +46,6 @@ public class editProfileActivity extends AppCompatActivity {
     Spinner inputSTAL;
 
     Button saveEntryButton;
-    Button deleteEntryButton;
 
     AppDatabase db;
     ProfileDao profileDao;
@@ -56,7 +55,7 @@ public class editProfileActivity extends AppCompatActivity {
     int profileID;
     Profile profile;
 
-    // Shared website-style switches, commitment date and optional conviction date.
+    // Shared triggers and separate jail/prison date inputs.
     private TriggerFormController triggerController;
     private AdditionalChargesController additionalChargesController;
     private ProfilePhotoController photoController;
@@ -169,8 +168,6 @@ public class editProfileActivity extends AppCompatActivity {
         saveEntryButton =
                 findViewById(R.id.saveEntryButton);
 
-        deleteEntryButton =
-                findViewById(R.id.deleteEntryButton);
 
 
         // =====================================================
@@ -221,13 +218,13 @@ public class editProfileActivity extends AppCompatActivity {
         ArrayAdapter<String> stalAdapter =
                 new ArrayAdapter<>(
                         this,
-                        android.R.layout.simple_spinner_item,
+                        R.layout.stal_spinner_item,
                         stalOptions
                 );
 
 
         stalAdapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item
+                R.layout.stal_spinner_dropdown_item
         );
 
 
@@ -292,8 +289,7 @@ public class editProfileActivity extends AppCompatActivity {
         /*
          * Commitment date is deliberately NOT handled here.
          *
-         * Its meaning can change between jail and prison,
-         * so TriggerFormController owns that picker.
+         * TriggerFormController owns both separate jail and prison date pickers.
          */
 
         inputLEADate.setOnClickListener(v -> {
@@ -323,10 +319,6 @@ public class editProfileActivity extends AppCompatActivity {
         });
 
 
-        deleteEntryButton.setOnClickListener(v -> {
-
-            deleteProfile();
-        });
     }
 
 
@@ -399,6 +391,16 @@ public class editProfileActivity extends AppCompatActivity {
                         profile.timeGapDays
                 )
         );
+
+        boolean monthlyDeductions = !profile.deductionMonths.isEmpty();
+        inputDeductionRaw.setEnabled(!monthlyDeductions);
+        inputDeductionRaw.setAlpha(monthlyDeductions ? 0.45f : 1f);
+        findViewById(R.id.deductionEditHint).setVisibility(monthlyDeductions ? View.VISIBLE : View.GONE);
+        if (monthlyDeductions) {
+            SentenceCalculator.Result result = SentenceCalculator.calculate(ProfileCalculationMapper.from(profile));
+            inputDeductionRaw.setText(String.valueOf(result.appliedDeductionDays));
+            inputDeductionRaw.setContentDescription(getString(R.string.deduction_edit_hint));
+        }
 
 
         // Restore the website's STAL selection in every trigger mode.
@@ -521,15 +523,6 @@ public class editProfileActivity extends AppCompatActivity {
 
 
     // =========================================================
-    // DELETE PROFILE
-    // =========================================================
-
-    private void deleteProfile() {
-        photoController.delete(profile);
-    }
-
-
-    // =========================================================
     // SAVE PROFILE
     // =========================================================
 
@@ -601,8 +594,8 @@ public class editProfileActivity extends AppCompatActivity {
         /*
          * Commitment date is NOT written here.
          *
-         * TriggerFormController knows whether the visible
-         * field represents jail or prison commitment.
+         * TriggerFormController selects the calculation anchor from
+         * the separate jail and prison date inputs.
          */
 
 
@@ -705,7 +698,7 @@ public class editProfileActivity extends AppCompatActivity {
         // EXTRA ADJUSTMENTS
         // =====================================================
 
-        profile.deductionDays =
+        if (profile.deductionMonths.isEmpty()) profile.deductionDays =
                 getIntOrZero(
                         inputDeductionRaw
                 );

@@ -34,10 +34,10 @@ public class ProfileBreakdownDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
-        // Keep the standard rounded dialog shape while matching the app's warm palette.
+        // Keep the standard rounded dialog shape while matching the app's LAYA palette.
         if (builder.getBackground() instanceof MaterialShapeDrawable) {
             ((MaterialShapeDrawable) builder.getBackground()).setFillColor(ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), R.color.breakdown_surface)));
+                    ContextCompat.getColor(requireContext(), R.color.laya_surface)));
         }
         View content = getLayoutInflater().cloneInContext(builder.getContext())
                 .inflate(R.layout.dialog_profile_breakdown, null);

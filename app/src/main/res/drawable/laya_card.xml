@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:paddingMode="stack">
+    <!-- Web shadow: 0 3px 15px; radius 14px. No native elevation overlay. -->
+    <item>
+        <nine-patch
+            android:src="@drawable/laya_card_shadow_mask"
+            android:tint="@color/laya_card_shadow"/>
+    </item>
+    <item
+        android:left="16dp"
+        android:top="13dp"
+        android:right="16dp"
+        android:bottom="19dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/laya_surface"/>
+            <corners android:radius="14dp"/>
+        </shape>
+    </item>
+</layer-list>

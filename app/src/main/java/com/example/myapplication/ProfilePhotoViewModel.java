@@ -107,27 +107,6 @@ public final class ProfilePhotoViewModel extends AndroidViewModel {
         });
     }
 
-    void delete(Profile profile) {
-        State current = state.getValue();
-        if (current == null || current.busy) return;
-        String oldPath = savedPath;
-        publish(current.path, true);
-        ProfilePhotoStore.IO.execute(() -> {
-            try { AppDatabase.getInstance(getApplication()).ProfileDao().deleteUser(profile); }
-            catch (RuntimeException failure) {
-                main.post(() -> {
-                    if (cleared) return;
-                    publish(current.path, false);
-                    error.setValue(R.string.profile_delete_failed);
-                });
-                return;
-            }
-            discard(oldPath);
-            discard(current.path);
-            main.post(() -> { if (!cleared) completion.setValue(new Bundle()); });
-        });
-    }
-
     private void discard(String path) {
         if (path == null || path.isEmpty()) return;
         ProfilePhotoStore.IO.execute(() -> {

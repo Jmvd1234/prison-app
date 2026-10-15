@@ -11,6 +11,7 @@ import com.example.myapplication.db.Profile;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import java.time.LocalDate;
 import static org.junit.Assert.*;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
@@ -19,137 +20,158 @@ import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 @RunWith(AndroidJUnit4.class)
 public class TriggerFormControllerTest {
-    private EditText conviction(newEntryActivity activity) {
-        LinearLayout details = activity.findViewById(R.id.triggerDetailsContainer);
-        return (EditText) ((LinearLayout) details.getChildAt(1)).getChildAt(0);
-    }
+    private EditText date(newEntryActivity a, int id) { return a.findViewById(id); }
 
     @Test public void bothLayoutsLoadAndSaveAllTriggerCombinations() {
         try (ActivityScenario<newEntryActivity> scenario = ActivityScenario.launch(newEntryActivity.class)) {
-            scenario.onActivity(activity -> {
+            scenario.onActivity(a -> {
                 for (int layout : new int[]{R.layout.activity_new_entry, R.layout.activity_edit_profile}) {
                     for (int bits = 0; bits < 8; bits++) {
-                        activity.setContentView(layout);
-                        Profile p = new Profile();
-                        p.notCommittedToJail = (bits & 1) != 0;
-                        p.disqualifiedForCPI = (bits & 2) != 0;
+                        a.setContentView(layout);
+                        Profile p = new Profile(); p.separateCustodyDates = true;
+                        p.notCommittedToJail = (bits & 1) != 0; p.disqualifiedForCPI = (bits & 2) != 0;
                         p.disqualifiedForTimeAllowances = (bits & 4) != 0;
-                        p.commitmentDate = "Nov 13, 2025";
-                        p.convictionDate = "May 13, 2026";
-                        LinearLayout details = activity.findViewById(R.id.triggerDetailsContainer);
-                        TriggerFormController controller = new TriggerFormController(activity, details);
-                        controller.load(p, null);
+                        p.jailCommitmentDate = "Jun 20, 2018"; p.prisonTransferDate = "Mar 10, 2019";
                         boolean prison = p.notCommittedToJail || p.disqualifiedForCPI;
-                        assertEquals(prison ? "Prison Commitment Date" : "Jail Commitment Date",
-                                ((TextView) activity.findViewById(R.id.commitmentDateLabel)).getText().toString());
-                        assertEquals(p.disqualifiedForTimeAllowances && !p.disqualifiedForCPI
-                                ? View.VISIBLE : View.GONE, details.getVisibility());
-                        assertEquals(2, details.getChildCount()); // Label and one date row only.
-                        assertEquals("Date of conviction, if any", ((TextView) details.getChildAt(0)).getText());
-                        MaterialSwitch ta = activity.findViewById(R.id.disqualifiedTASwitch);
+                        p.commitmentDate = prison ? p.prisonTransferDate : p.jailCommitmentDate;
+                        LinearLayout details = a.findViewById(R.id.triggerDetailsContainer);
+                        TriggerFormController controller = new TriggerFormController(a, details); controller.load(p, null);
+                        assertEquals(!p.notCommittedToJail, date(a,R.id.inputCommitmentDate).isEnabled());
+                        assertTrue(date(a,R.id.inputPrisonTransferDate).isEnabled());
+                        assertTrue(a.findViewById(R.id.clearPrisonTransferDate).isEnabled());
+                        assertEquals(p.disqualifiedForCPI && !p.notCommittedToJail ? "Jail Commitment Date, if any" : "Jail Commitment Date",
+                                ((TextView)a.findViewById(R.id.commitmentDateLabel)).getText().toString());
+                        assertEquals(prison ? "Prison Commitment Date" : "Prison Commitment Date, if any",
+                                ((TextView)a.findViewById(R.id.prisonTransferLabel)).getText().toString());
+                        assertEquals(View.GONE, details.getVisibility()); assertEquals(0, details.getChildCount());
+                        MaterialSwitch ta = a.findViewById(R.id.disqualifiedTASwitch);
                         assertEquals(p.disqualifiedForCPI || p.disqualifiedForTimeAllowances, ta.isChecked());
                         assertEquals(!p.disqualifiedForCPI, ta.isEnabled());
-                        Profile saved = new Profile();
-                        controller.writeToProfile(saved);
+                        Profile saved = new Profile(); controller.writeToProfile(saved);
+                        assertTrue(saved.separateCustodyDates); assertNull(saved.convictionDate);
                         assertEquals(p.commitmentDate, saved.commitmentDate);
-                        assertEquals(p.convictionDate, saved.convictionDate);
-                        assertEquals(p.disqualifiedForCPI || p.disqualifiedForTimeAllowances,
-                                saved.disqualifiedForTimeAllowances);
-                        assertEquals(p.disqualifiedForTimeAllowances && !p.disqualifiedForCPI
-                                        ? p.convictionDate : null,
+                        assertEquals(p.jailCommitmentDate, saved.jailCommitmentDate);
+                        assertEquals(p.prisonTransferDate, saved.prisonTransferDate);
+                        assertEquals(ta.isChecked() && !p.notCommittedToJail && !p.disqualifiedForCPI ? p.prisonTransferDate : null,
                                 ProfileCalculationMapper.from(saved).convictionDate);
                     }
                 }
             });
         }
     }
-
-    @Test public void cancellingCpiLeavesCommitmentAndTriggersUnchanged() {
-        try (ActivityScenario<newEntryActivity> scenario = ActivityScenario.launch(newEntryActivity.class)) {
-            scenario.onActivity(activity -> {
-                ((EditText) activity.findViewById(R.id.inputCommitmentDate)).setText("Nov 13, 2025");
-                activity.findViewById(R.id.disqualifiedCPISwitch).performClick();
-            });
-            onView(withText("Cancel")).perform(click());
-            scenario.onActivity(activity -> {
-                assertFalse(((MaterialSwitch) activity.findViewById(R.id.disqualifiedCPISwitch)).isChecked());
-                assertFalse(((MaterialSwitch) activity.findViewById(R.id.disqualifiedTASwitch)).isChecked());
-                assertEquals("Nov 13, 2025", ((EditText) activity.findViewById(R.id.inputCommitmentDate)).getText().toString());
-                assertEquals(View.GONE, activity.findViewById(R.id.triggerDetailsContainer).getVisibility());
+    @Test public void combinedSwitchesCalculateIdenticallyInEitherToggleOrderAndAfterRestore() {
+        for (int layout : new int[]{R.layout.activity_new_entry, R.layout.activity_edit_profile}) {
+            for (int disqualification : new int[]{R.id.disqualifiedCPISwitch, R.id.disqualifiedTASwitch}) {
+                for (boolean directFirst : new boolean[]{false,true}) {
+                    try (ActivityScenario<newEntryActivity> s=ActivityScenario.launch(newEntryActivity.class)) {
+                        final TriggerFormController[] controller=new TriggerFormController[1];
+                        s.onActivity(a -> {
+                            a.setContentView(layout);
+                            controller[0]=new TriggerFormController(a,a.findViewById(R.id.triggerDetailsContainer));
+                            controller[0].load(null,null);
+                            date(a,R.id.inputLEADate).setText("Jan 10, 2018");
+                            date(a,R.id.inputCommitmentDate).setText("Feb 20, 2018");
+                            date(a,R.id.inputPrisonTransferDate).setText("Jun 20, 2018");
+                        });
+                        // Wait for the replaced form's window before opening its modal.
+                        onView(withId(R.id.main)).check(androidx.test.espresso.assertion.ViewAssertions.matches(
+                                androidx.test.espresso.matcher.ViewMatchers.isDisplayed()));
+                        s.onActivity(a -> {
+                            if(directFirst) a.findViewById(R.id.committedSwitch).performClick();
+                            a.findViewById(disqualification).performClick();
+                        });
+                        onView(withText(R.string.trigger_warning_confirm))
+                                .inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog()).perform(click());
+                        s.onActivity(a -> {
+                            if(!directFirst) a.findViewById(R.id.committedSwitch).performClick();
+                            Profile saved=new Profile(); controller[0].writeToProfile(saved);
+                            saved.leaArrestDate="Jan 10, 2018"; saved.minYears=5; saved.maxYears=10;
+                            assertTrue(saved.notCommittedToJail);
+                            assertEquals(disqualification==R.id.disqualifiedCPISwitch,saved.disqualifiedForCPI);
+                            assertTrue(saved.disqualifiedForTimeAllowances);
+                            SentenceCalculator.Result r=SentenceCalculator.calculate(ProfileCalculationMapper.from(saved,LocalDate.of(2020,2,20)));
+                            assertTrue(r.problem,r.available);
+                            // Independent ordinary-not-jail live LAYA fixture (2026-10-14).
+                            assertEquals(400,r.gctaDays); assertEquals(300,r.tastmDays);
+                            assertEquals(355,r.minRemainingDays); assertEquals(2182,r.maxRemainingDays);
+                            Bundle state=new Bundle(); controller[0].saveInstanceState(state);
+                            a.setContentView(layout);
+                            TriggerFormController restored=new TriggerFormController(a,a.findViewById(R.id.triggerDetailsContainer));
+                            restored.load(saved,state);
+                            assertFalse(date(a,R.id.inputCommitmentDate).isEnabled());
+                            assertTrue(((MaterialSwitch)a.findViewById(disqualification)).isChecked());
+                            assertEquals("Jun 20, 2018",date(a,R.id.inputPrisonTransferDate).getText().toString());
+                            Profile reopened=new Profile(); restored.writeToProfile(reopened);
+                            reopened.leaArrestDate=saved.leaArrestDate; reopened.minYears=5; reopened.maxYears=10;
+                            assertEquals(r.maxRemainingDays,SentenceCalculator.calculate(ProfileCalculationMapper.from(reopened,LocalDate.of(2020,2,20))).maxRemainingDays);
+                        });
+                    }
+                }
+            }
+        }
+    }
+    @Test public void cancellingCpiLeavesBothDatesAndTriggersUnchanged() {
+        try (ActivityScenario<newEntryActivity> s = ActivityScenario.launch(newEntryActivity.class)) {
+            s.onActivity(a -> { date(a,R.id.inputCommitmentDate).setText("Jun 20, 2018"); a.findViewById(R.id.disqualifiedCPISwitch).performClick(); });
+            onView(withText(R.string.trigger_warning_cancel)).perform(click());
+            s.onActivity(a -> {
+                assertFalse(((MaterialSwitch)a.findViewById(R.id.disqualifiedCPISwitch)).isChecked());
+                assertEquals("Jun 20, 2018",date(a,R.id.inputCommitmentDate).getText().toString());
+                assertEquals("",date(a,R.id.inputPrisonTransferDate).getText().toString());
             });
         }
     }
-
-    @Test public void confirmedCpiAndDateSurviveRecreationAndUnlockTaWhenCleared() {
-        try (ActivityScenario<newEntryActivity> scenario = ActivityScenario.launch(newEntryActivity.class)) {
-            scenario.onActivity(activity -> {
-                ((EditText) activity.findViewById(R.id.inputCommitmentDate)).setText("Nov 13, 2025");
-                activity.findViewById(R.id.disqualifiedCPISwitch).performClick();
-            });
-            onView(withText("Confirmed")).perform(click());
-            scenario.recreate();
-            scenario.onActivity(activity -> {
-                MaterialSwitch cpi = activity.findViewById(R.id.disqualifiedCPISwitch);
-                MaterialSwitch ta = activity.findViewById(R.id.disqualifiedTASwitch);
-                assertTrue(cpi.isChecked());
-                assertTrue(ta.isChecked());
-                assertFalse(ta.isEnabled());
-                assertEquals(View.GONE, activity.findViewById(R.id.triggerDetailsContainer).getVisibility());
-                assertEquals("Nov 13, 2025", ((EditText) activity.findViewById(R.id.inputCommitmentDate)).getText().toString());
-                cpi.performClick();
-                assertTrue(ta.isChecked());
-                assertTrue(ta.isEnabled());
-                assertEquals(View.VISIBLE, activity.findViewById(R.id.triggerDetailsContainer).getVisibility());
-                ta.performClick();
-                assertEquals(View.GONE, activity.findViewById(R.id.triggerDetailsContainer).getVisibility());
+    @Test public void cpiKeepsOptionalJailAndBothDatesAcrossRotation() {
+        try (ActivityScenario<newEntryActivity> s = ActivityScenario.launch(newEntryActivity.class)) {
+            s.onActivity(a -> { date(a,R.id.inputCommitmentDate).setText("Jun 20, 2018");
+                date(a,R.id.inputPrisonTransferDate).setText("Mar 10, 2019"); a.findViewById(R.id.disqualifiedCPISwitch).performClick(); });
+            onView(withText(R.string.trigger_warning_confirm)).perform(click()); s.recreate();
+            s.onActivity(a -> {
+                assertTrue(date(a,R.id.inputCommitmentDate).isEnabled());
+                assertEquals("Jun 20, 2018",date(a,R.id.inputCommitmentDate).getText().toString());
+                assertEquals("Mar 10, 2019",date(a,R.id.inputPrisonTransferDate).getText().toString());
+                assertFalse(a.findViewById(R.id.disqualifiedTASwitch).isEnabled());
+                a.findViewById(R.id.disqualifiedCPISwitch).performClick();
+                assertTrue(a.findViewById(R.id.disqualifiedTASwitch).isEnabled());
+                assertEquals(View.GONE,a.findViewById(R.id.triggerDetailsContainer).getVisibility());
+                assertTrue(date(a,R.id.inputCommitmentDate).isEnabled());
             });
         }
     }
-
-    @Test public void taConvictionDraftSurvivesHidingAndRecreation() {
-        try (ActivityScenario<newEntryActivity> scenario = ActivityScenario.launch(newEntryActivity.class)) {
-            scenario.onActivity(activity -> activity.findViewById(R.id.disqualifiedTASwitch).performClick());
-            onView(withText("Confirmed")).perform(click());
-            scenario.onActivity(activity -> {
-                conviction(activity).setText("May 13, 2026");
-                activity.findViewById(R.id.disqualifiedTASwitch).performClick();
-                assertEquals(View.GONE, activity.findViewById(R.id.triggerDetailsContainer).getVisibility());
-            });
-            scenario.recreate();
-            scenario.onActivity(activity -> activity.findViewById(R.id.disqualifiedTASwitch).performClick());
-            onView(withText("Confirmed")).perform(click());
-            scenario.onActivity(activity -> {
-                assertEquals("May 13, 2026", conviction(activity).getText().toString());
-                LinearLayout details = activity.findViewById(R.id.triggerDetailsContainer);
-                ((LinearLayout) details.getChildAt(1)).getChildAt(1).performClick();
-                assertEquals("", conviction(activity).getText().toString());
+    @Test public void taOnlyKeepsNormalFieldsAndNeverAddsConvictionInput() {
+        try (ActivityScenario<newEntryActivity> s = ActivityScenario.launch(newEntryActivity.class)) {
+            s.onActivity(a -> a.findViewById(R.id.disqualifiedTASwitch).performClick());
+            onView(withText(R.string.trigger_warning_confirm)).perform(click()); s.recreate();
+            s.onActivity(a -> {
+                assertTrue(date(a,R.id.inputCommitmentDate).isEnabled());
+                assertTrue(date(a,R.id.inputPrisonTransferDate).isEnabled());
+                assertEquals(View.GONE,a.findViewById(R.id.triggerDetailsContainer).getVisibility());
+                assertEquals(0,((LinearLayout)a.findViewById(R.id.triggerDetailsContainer)).getChildCount());
             });
         }
     }
-
-    @Test public void notJailOnlyRelabelsTheEnteredDate() {
-        try (ActivityScenario<newEntryActivity> scenario = ActivityScenario.launch(newEntryActivity.class)) {
-            scenario.onActivity(activity -> {
-                EditText date = activity.findViewById(R.id.inputCommitmentDate);
-                date.setText("Nov 13, 2025");
-                activity.findViewById(R.id.committedSwitch).performClick();
-                assertEquals("Prison Commitment Date", ((TextView) activity.findViewById(R.id.commitmentDateLabel)).getText());
-                assertEquals(View.GONE, activity.findViewById(R.id.triggerDetailsContainer).getVisibility());
-                assertEquals("Nov 13, 2025", date.getText().toString());
-                activity.findViewById(R.id.committedSwitch).performClick();
-                assertEquals("Jail Commitment Date", ((TextView) activity.findViewById(R.id.commitmentDateLabel)).getText());
-                assertEquals("Nov 13, 2025", date.getText().toString());
+    @Test public void notJailDisablesOnlyJailAndKeepsIndependentDrafts() {
+        try (ActivityScenario<newEntryActivity> s = ActivityScenario.launch(newEntryActivity.class)) {
+            s.onActivity(a -> { date(a,R.id.inputCommitmentDate).setText("Jun 20, 2018");
+                date(a,R.id.inputPrisonTransferDate).setText("Mar 10, 2019"); a.findViewById(R.id.committedSwitch).performClick(); });
+            s.recreate();
+            s.onActivity(a -> {
+                assertFalse(date(a,R.id.inputCommitmentDate).isEnabled());
+                assertTrue(date(a,R.id.inputPrisonTransferDate).isEnabled());
+                assertEquals("Jun 20, 2018",date(a,R.id.inputCommitmentDate).getText().toString());
+                assertEquals("Mar 10, 2019",date(a,R.id.inputPrisonTransferDate).getText().toString());
+                a.findViewById(R.id.committedSwitch).performClick();
+                assertTrue(date(a,R.id.inputCommitmentDate).isEnabled());
             });
         }
     }
-
-    @Test public void openCommitmentPickerReconnectsAfterRecreation() {
-        try (ActivityScenario<newEntryActivity> scenario = ActivityScenario.launch(newEntryActivity.class)) {
-            scenario.onActivity(activity -> activity.findViewById(R.id.inputCommitmentDate).performClick());
-            scenario.recreate();
-            onView(withId(com.google.android.material.R.id.confirm_button)).perform(click());
-            scenario.onActivity(activity -> assertFalse(
-                    ((EditText) activity.findViewById(R.id.inputCommitmentDate)).getText().toString().isEmpty()));
+    @Test public void openJailAndPrisonPickersReconnectAfterRecreation() {
+        for (int id : new int[]{R.id.inputCommitmentDate,R.id.inputPrisonTransferDate}) {
+            try (ActivityScenario<newEntryActivity> s = ActivityScenario.launch(newEntryActivity.class)) {
+                s.onActivity(a -> a.findViewById(id).performClick()); s.recreate();
+                onView(withId(com.google.android.material.R.id.confirm_button)).perform(click());
+                s.onActivity(a -> assertFalse(date(a,id).getText().toString().isEmpty()));
+            }
         }
     }
 }

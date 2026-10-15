@@ -1,4 +1,5 @@
 <resources>
+    <string name="calculate_entry">CALCULATE</string>
     <string name="app_name">Laya Calculator</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>

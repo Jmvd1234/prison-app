@@ -19,6 +19,9 @@ public class Profile_RecyclerViewAdapter
         extends RecyclerView.Adapter<
         Profile_RecyclerViewAdapter.MyViewHolder> {
 
+    interface OnDeleteEntryListener { void onDeleteEntry(profileModel profile); }
+    private final OnDeleteEntryListener deleteEntryListener;
+
     Context context;
     ArrayList<profileModel> profileModels;
 
@@ -27,6 +30,12 @@ public class Profile_RecyclerViewAdapter
             Context context,
             ArrayList<profileModel> profileModels) {
 
+        this(context, profileModels, null);
+    }
+
+    public Profile_RecyclerViewAdapter(Context context, ArrayList<profileModel> profileModels,
+            OnDeleteEntryListener deleteEntryListener) {
+        this.deleteEntryListener = deleteEntryListener;
         this.context = context;
         this.profileModels = profileModels;
     }
@@ -64,7 +73,7 @@ public class Profile_RecyclerViewAdapter
 
         //profile details
         ProfilePhotoLoader.show(holder.imageView, profile.getImagePath(), R.drawable.profile_placeholder);
-        holder.imageView.setContentDescription(context.getString(R.string.profile_photo_edit,
+        holder.imageView.setContentDescription(context.getString(R.string.profile_photo_description,
                 profile.getFirstName(), profile.getLastName()));
 
         holder.firstName.setText("First Name: " + profile.getFirstName());
@@ -118,9 +127,19 @@ public class Profile_RecyclerViewAdapter
 
 
 
-        //allowing you to edit the profile when you click the image
-        //and sending the already present profileID to the new intent
-        holder.imageView.setOnClickListener(v -> {
+        holder.deleteEntry.setVisibility(deleteEntryListener == null ? View.GONE : View.VISIBLE);
+        holder.deleteEntry.setContentDescription(context.getString(
+                R.string.delete_profile_entry, profile.getFirstName(), profile.getLastName()));
+        holder.deleteEntry.setOnClickListener(v -> {
+            int currentPosition = holder.getBindingAdapterPosition();
+            if (currentPosition == RecyclerView.NO_POSITION || deleteEntryListener == null) return;
+            deleteEntryListener.onDeleteEntry(profileModels.get(currentPosition));
+        });
+
+        holder.editEntry.setContentDescription(context.getString(
+                R.string.edit_profile_entry, profile.getFirstName(), profile.getLastName()));
+        // Resolve the current row at click time, including after sorting/recycling.
+        holder.editEntry.setOnClickListener(v -> {
 
             int currentPosition =
                     holder.getBindingAdapterPosition();
@@ -192,6 +211,8 @@ public class Profile_RecyclerViewAdapter
         TextView suggestedAction;
 
         TextView exportPDF;
+        View deleteEntry;
+        MaterialButton editEntry;
         MaterialButton expandBreakdown;
 
 
@@ -242,6 +263,10 @@ public class Profile_RecyclerViewAdapter
                             R.id.actionBox
                     );
 
+
+            deleteEntry = itemView.findViewById(R.id.deleteProfileEntryButton);
+
+            editEntry = itemView.findViewById(R.id.editEntryButton);
 
             expandBreakdown =
                     itemView.findViewById(

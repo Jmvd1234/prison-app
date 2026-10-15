@@ -1,37 +1,89 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<resources>
     <style name="Base.Theme.MyApplication" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">@color/app_text_accent_color</item>
-        <item name="colorOnPrimary">@color/app_button_text_color</item>
-        <item name="colorPrimaryContainer">@color/app_section_color</item>
-        <item name="colorOnPrimaryContainer">@color/app_ink</item>
-        <item name="colorSecondary">@color/app_text_accent_color</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSecondaryContainer">@color/app_section_color</item>
-        <item name="colorOnSecondaryContainer">@color/app_ink</item>
-        <item name="colorSurface">@color/app_surface_color</item>
-        <item name="colorOnSurface">@color/app_ink</item>
-        <item name="colorSurfaceVariant">@color/app_section_color</item>
-        <item name="colorOnSurfaceVariant">@color/app_secondary_ink</item>
-        <item name="colorOutline">@color/app_outline</item>
-        <item name="android:colorBackground">@color/white</item>
-        <item name="colorOnBackground">@color/app_ink</item>
-        <item name="colorControlActivated">@color/app_icon_color</item>
+        <item name="colorPrimary">@color/laya_primary</item>
+        <item name="colorOnPrimary">@color/laya_white</item>
+        <item name="colorPrimaryContainer">@color/laya_summary</item>
+        <item name="colorOnPrimaryContainer">@color/laya_label</item>
+        <item name="colorSecondary">@color/laya_primary</item>
+        <item name="colorOnSecondary">@color/laya_white</item>
+        <item name="colorSecondaryContainer">@color/laya_summary</item>
+        <item name="colorOnSecondaryContainer">@color/laya_label</item>
+        <item name="colorSurface">@color/laya_surface</item>
+        <item name="colorSurfaceContainer">@color/laya_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/laya_surface</item>
+        <item name="colorSurfaceContainerHighest">@color/laya_surface</item>
+        <item name="colorOnSurface">@color/laya_text</item>
+        <item name="colorSurfaceVariant">@color/laya_summary</item>
+        <item name="colorOnSurfaceVariant">@color/laya_label</item>
+        <item name="colorOutline">@color/laya_border</item>
+        <item name="colorOutlineVariant">@color/laya_border</item>
+        <item name="colorError">@color/laya_danger</item>
+        <item name="android:colorBackground">@color/laya_background</item>
+        <item name="android:windowBackground">@color/laya_background</item>
+        <item name="colorOnBackground">@color/laya_text</item>
+        <item name="android:textColorPrimary">@color/laya_text</item>
+        <item name="android:textColorSecondary">@color/laya_label</item>
+        <item name="android:textColorHint">@color/laya_muted</item>
+        <item name="colorControlNormal">@color/laya_label</item>
+        <item name="colorControlActivated">@color/laya_primary</item>
+        <item name="colorControlHighlight">@color/laya_focus_ring</item>
         <item name="elevationOverlayEnabled">false</item>
         <item name="materialButtonStyle">@style/AppFilledButton</item>
         <item name="materialSwitchStyle">@style/AppSwitch</item>
+        <item name="editTextStyle">@style/AppEditText</item>
+        <item name="spinnerStyle">@style/AppSpinner</item>
+        <item name="materialAlertDialogTheme">@style/AppAlertDialog</item>
     </style>
 
     <style name="AppFilledButton" parent="Widget.Material3.Button">
-        <item name="backgroundTint">@color/app_button_color</item>
-        <item name="android:textColor">@color/app_button_text_color</item>
+        <item name="backgroundTint">@color/laya_primary</item>
+        <item name="android:textColor">@color/laya_white</item>
+        <item name="iconTint">@color/laya_white</item>
+        <item name="rippleColor">@color/laya_focus_ring</item>
+        <item name="cornerRadius">9dp</item>
+        <item name="android:elevation">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
     </style>
-
+    <style name="AppTextButton" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/laya_primary</item>
+        <item name="iconTint">@color/laya_primary</item>
+        <item name="rippleColor">@color/laya_focus_ring</item>
+        <item name="cornerRadius">9dp</item>
+    </style>
     <style name="AppSwitch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
         <item name="thumbTint">@color/app_switch_thumb</item>
         <item name="trackTint">@color/app_switch_track</item>
-        <item name="trackDecorationTint">@color/app_switch_track</item>
+        <item name="trackDecorationTint">@android:color/transparent</item>
     </style>
-
+    <style name="AppEditText" parent="Widget.AppCompat.EditText">
+        <item name="android:background">@drawable/entertextbox</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/laya_input_text</item>
+        <item name="android:textColorHint">@color/laya_muted</item>
+        <item name="android:paddingHorizontal">12dp</item>
+        <item name="android:paddingVertical">10dp</item>
+    </style>
+    <style name="AppSpinner" parent="Widget.AppCompat.Spinner">
+        <item name="android:background">@drawable/laya_spinner</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:popupBackground">@color/laya_surface</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">28dp</item>
+    </style>
+    <style name="AppAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/laya_surface</item>
+        <item name="colorPrimary">@color/laya_primary</item>
+        <item name="colorOnSurface">@color/laya_text</item>
+        <item name="colorOnSurfaceVariant">@color/laya_muted</item>
+        <item name="alertDialogStyle">@style/LayaAlertDialog</item>
+        <item name="android:backgroundDimAmount">0.5</item>
+    </style>
+    <style name="LayaAlertDialog" parent="MaterialAlertDialog.Material3">
+        <item name="shapeAppearance">@style/LayaDialogShape</item>
+    </style>
+    <style name="LayaDialogShape" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerSize">16dp</item>
+    </style>
     <style name="Theme.MyApplication" parent="Base.Theme.MyApplication" />
 </resources>

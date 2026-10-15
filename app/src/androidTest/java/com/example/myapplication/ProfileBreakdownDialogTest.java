@@ -71,17 +71,17 @@ public class ProfileBreakdownDialogTest {
             scenario.onActivity(activity -> {
                 Dialog d = dialog(activity);
                 text(d, R.id.leaDaysValue, "161");
-                text(d, R.id.leaGctaValue, "0");
-                text(d, R.id.leaTastmValue, "0");
+                text(d, R.id.leaGctaValue, "0/0");
+                text(d, R.id.leaTastmValue, "0/0");
                 text(d, R.id.jailDaysValue, "610");
-                text(d, R.id.jailGctaValue, "400");
-                text(d, R.id.jailTastmValue, "300");
+                text(d, R.id.jailGctaValue, "400/400");
+                text(d, R.id.jailTastmValue, "300/300");
                 text(d, R.id.prisonDaysValue, "\u2014");
                 text(d, R.id.prisonGctaValue, "\u2014");
                 text(d, R.id.prisonTastmValue, "\u2014");
                 text(d, R.id.totalDaysValue, "771");
-                text(d, R.id.totalGctaValue, "400");
-                text(d, R.id.totalTastmValue, "300");
+                text(d, R.id.totalGctaValue, "400/400");
+                text(d, R.id.totalTastmValue, "300/300");
                 text(d, R.id.stalCreditLabel, "STAL (20%)");
                 text(d, R.id.stalCreditValue, "1,096 days");
             });
@@ -90,7 +90,7 @@ public class ProfileBreakdownDialogTest {
             scenario.onActivity(activity -> {
                 Dialog d = dialog(activity);
                 text(d, R.id.totalDaysValue, "771");
-                text(d, R.id.jailGctaValue, "400");
+                text(d, R.id.jailGctaValue, "400/400");
                 assertEquals(1, activity.getSupportFragmentManager().getFragments().size());
                 text(d, R.id.stalCreditValue, "1,096 days");
                 d.findViewById(R.id.closeBreakdownButton).performClick();
@@ -111,15 +111,58 @@ public class ProfileBreakdownDialogTest {
                 Dialog d = dialog(activity);
                 text(d, R.id.jailDaysValue, "\u2014");
                 text(d, R.id.prisonDaysValue, "610");
-                text(d, R.id.prisonGctaValue, "0");
-                text(d, R.id.prisonTastmValue, "0");
-                text(d, R.id.totalGctaValue, "0");
-                text(d, R.id.totalTastmValue, "0");
+                text(d, R.id.prisonGctaValue, "0/0");
+                text(d, R.id.prisonTastmValue, "0/0");
+                text(d, R.id.totalGctaValue, "0/0");
+                text(d, R.id.totalTastmValue, "0/0");
                 text(d, R.id.stalCreditLabel, "STAL (40%)");
                 text(d, R.id.stalCreditValue, "2,192 days");
             });
             screenshot("breakdown-cpi.png");
         }
+    }
+
+    @Test public void monthlyRatiosRestoreAndFitWithFourDigitTotals() throws Exception {
+        SentenceCalculator.Input in = new SentenceCalculator.Input();
+        in.leaArrestDate = "2018-01-10"; in.commitmentDate = "2018-02-28";
+        in.prisonTransferDate = "2020-02-28"; in.observationDate = "2026-02-28";
+        in.minYears = 10; in.maxYears = 15;
+        in.deductionMonths = java.util.Arrays.asList(new DeductionMonth(2018,2,true,true),
+                new DeductionMonth(2020,2,true,false));
+        SentenceCalculator.Result result = SentenceCalculator.calculate(in);
+        assertTrue(result.problem, result.available);
+        Bundle values = BreakdownViewBinder.createArguments("Minimum", "Maximum", result);
+        try (ActivityScenario<HomeActivity> scenario = ActivityScenario.launch(HomeActivity.class)) {
+            scenario.onActivity(a -> ProfileBreakdownDialogFragment.newInstance(values)
+                    .showNow(a.getSupportFragmentManager(), ProfileBreakdownDialogFragment.TAG));
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            assertMonthlyRatios(scenario);
+            screenshot("breakdown-net-total.png");
+            scenario.recreate();
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            assertMonthlyRatios(scenario);
+        }
+    }
+
+    private void assertMonthlyRatios(ActivityScenario<HomeActivity> scenario) {
+        scenario.onActivity(a -> {
+            Dialog d = dialog(a);
+            text(d,R.id.leaGctaValue,"0/0"); text(d,R.id.leaTastmValue,"0/0");
+            text(d,R.id.jailGctaValue,"460/480"); text(d,R.id.jailTastmValue,"345/360");
+            text(d,R.id.prisonGctaValue,"1,705/1,728"); text(d,R.id.prisonTastmValue,"1,080/1,080");
+            text(d,R.id.totalGctaValue,"2,165/2,208"); text(d,R.id.totalTastmValue,"1,425/1,440");
+            text(d,R.id.breakdownDeductionValue,"58 days");
+            assertEquals("Total, GCTA: 2,165 of 2,208 possible days",
+                    d.findViewById(R.id.totalGctaValue).getContentDescription());
+            for (int id : new int[]{R.id.jailGctaValue,R.id.jailTastmValue,R.id.prisonGctaValue,
+                    R.id.prisonTastmValue,R.id.totalGctaValue,R.id.totalTastmValue}) {
+                TextView cell = d.findViewById(id);
+                assertNotNull(cell.getLayout()); assertEquals(1,cell.getLayout().getLineCount());
+                assertEquals(0,cell.getLayout().getEllipsisCount(0));
+                assertTrue("Credit ratio fits its cell",cell.getLayout().getLineWidth(0)
+                        <= cell.getWidth()-cell.getCompoundPaddingLeft()-cell.getCompoundPaddingRight()+1);
+            }
+        });
     }
 
     private void screenshot(String name) throws Exception {

@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.os.Bundle;
+import android.graphics.Paint;
 import android.view.View;
 import android.widget.TextView;
 
@@ -10,18 +11,26 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.myapplication.db.AppDatabase;
 import com.example.myapplication.db.Profile;
-import com.example.myapplication.db.ProfileDao;
 import com.google.android.material.slider.Slider;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.CompositeDateValidator;
+import com.google.android.material.datepicker.DateValidatorPointBackward;
+import com.google.android.material.datepicker.DateValidatorPointForward;
+import com.google.android.material.datepicker.MaterialDatePicker;
 
 import java.time.LocalDate;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Today by default, with an unsaved monthly preview of the same calculation. */
+/** Today by default, with an unsaved daily preview of the same calculation. */
 public class BreakdownActivity extends AppCompatActivity {
     public static final String EXTRA_PROFILE_ID = "profileID";
+    private static final String OBSERVATION_PICKER = "breakdown_observation_picker";
     private static final String STATE_DATE = "preview_epoch_day";
     private static final String STATE_TODAY = "follow_today";
 
@@ -32,7 +41,9 @@ public class BreakdownActivity extends AppCompatActivity {
     private TimelineMilestonesLayout timeline;
     private View breakdownCard, previewControls, releaseDates;
     private Slider dateSlider;
+    private View[] backwardDateButtons, forwardDateButtons;
     private Profile profile;
+    private DeductionDatesController deductions;
     private SentenceProjection.Range range;
     private LocalDate selectedDate, projectionToday;
     private boolean followToday = true, bindingSlider;
@@ -51,10 +62,22 @@ public class BreakdownActivity extends AppCompatActivity {
         findViewById(R.id.breakdownBackButton).setOnClickListener(view -> finish());
         profileName = findViewById(R.id.breakdownProfileName);
         observationDate = findViewById(R.id.breakdownObservationDate);
+        observationDate.setPaintFlags(observationDate.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        observationDate.setOnClickListener(view -> showObservationDatePicker());
         status = findViewById(R.id.breakdownStatus);
         breakdownCard = findViewById(R.id.breakdownCard);
         previewControls = findViewById(R.id.breakdownPreviewControls);
         dateSlider = findViewById(R.id.breakdownDateSlider);
+        backwardDateButtons = new View[]{findViewById(R.id.breakdownDayBack),
+                findViewById(R.id.breakdownMonthBack), findViewById(R.id.breakdownYearBack)};
+        forwardDateButtons = new View[]{findViewById(R.id.breakdownDayForward),
+                findViewById(R.id.breakdownMonthForward), findViewById(R.id.breakdownYearForward)};
+        ChronoUnit[] units = {ChronoUnit.DAYS, ChronoUnit.MONTHS, ChronoUnit.YEARS};
+        for (int i = 0; i < units.length; i++) {
+            final ChronoUnit unit = units[i];
+            backwardDateButtons[i].setOnClickListener(view -> shiftDate(-1, unit));
+            forwardDateButtons[i].setOnClickListener(view -> shiftDate(1, unit));
+        }
         rangeStart = findViewById(R.id.breakdownRangeStart);
         rangeEnd = findViewById(R.id.breakdownRangeEnd);
         timeline = findViewById(R.id.breakdownTimeline);
@@ -71,6 +94,7 @@ public class BreakdownActivity extends AppCompatActivity {
                 selectedDate = LocalDate.ofEpochDay(savedInstanceState.getLong(STATE_DATE));
             }
         }
+        rebindObservationDatePicker();
         dateSlider.setLabelFormatter(value -> range == null ? "" : range.dates.get(
                 Math.min(Math.round(value), range.dates.size() - 1)).format(SentenceCalculator.DISPLAY_DATE));
         dateSlider.addOnChangeListener((slider, value, fromUser) -> {
@@ -78,12 +102,6 @@ public class BreakdownActivity extends AppCompatActivity {
             LocalDate date = range.dates.get(Math.round(value));
             followToday = date.equals(LocalDate.now());
             renderDate(date);
-        });
-        findViewById(R.id.breakdownTodayButton).setOnClickListener(view -> {
-            followToday = true;
-            LocalDate today = LocalDate.now();
-            if (range == null || !today.equals(projectionToday)) prepareProjection();
-            else selectDate(today);
         });
 
         int profileID = getIntent().getIntExtra(EXTRA_PROFILE_ID, -1);
@@ -96,31 +114,14 @@ public class BreakdownActivity extends AppCompatActivity {
             showError(getString(R.string.breakdown_profile_missing));
             return;
         }
-        ProfileDao dao = AppDatabase.getInstance(getApplicationContext()).ProfileDao();
-        executor.execute(() -> {
-            try {
-                Profile loaded = dao.getProfileByProfileID(profileID);
-                if (loaded == null || loaded.userID != userID) {
-                    postError(getString(R.string.breakdown_profile_missing));
-                    return;
-                }
-                runOnUiThread(() -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    if (currentUserID() != userID) {
-                        showError(getString(R.string.breakdown_sign_in));
-                        return;
-                    }
-                    profile = loaded;
-                    profileName.setText(getString(R.string.breakdown_profile_name,
-                            profile.firstName == null ? "" : profile.firstName,
-                            profile.lastName == null ? "" : profile.lastName).trim());
-                    profileName.setVisibility(View.VISIBLE);
-                    prepareProjection();
-                });
-            } catch (RuntimeException error) {
-                postError(getString(R.string.breakdown_load_failed));
-            }
-        });
+        deductions = new DeductionDatesController(this, profileID, userID, savedInstanceState, loaded -> {
+            profile = loaded;
+            profileName.setText(getString(R.string.breakdown_profile_name,
+                    profile.firstName == null ? "" : profile.firstName,
+                    profile.lastName == null ? "" : profile.lastName).trim());
+            profileName.setVisibility(View.VISIBLE);
+            prepareProjection();
+        }, this::showError);
     }
 
     private long currentUserID() {
@@ -131,16 +132,17 @@ public class BreakdownActivity extends AppCompatActivity {
         if (profile == null || isFinishing() || isDestroyed()) return;
         final int request = ++generation;
         final LocalDate today = LocalDate.now();
-        final LocalDate preview = followToday ? null : selectedDate;
         final Profile saved = profile;
         projectionToday = today;
         dateSlider.setEnabled(false);
+        observationDate.setEnabled(false);
+        setDateButtonsEnabled(false, false);
         executor.execute(() -> {
             SentenceCalculator.Result current = SentenceCalculator.calculate(ProfileCalculationMapper.from(saved, today));
             SentenceProjection.Range calculatedRange = null;
             String problem = null;
             if (current.available) {
-                try { calculatedRange = SentenceProjection.create(saved, today, preview); }
+                try { calculatedRange = SentenceProjection.create(saved, today); }
                 catch (IllegalArgumentException error) { problem = error.getMessage(); }
             }
             final SentenceProjection.Range completedRange = calculatedRange;
@@ -179,12 +181,77 @@ public class BreakdownActivity extends AppCompatActivity {
                 dateSlider.setEnabled(range.dates.size() > 1);
                 timeline.setMilestones(range, date -> {
                     followToday = date.equals(LocalDate.now());
-                    selectDate(date);
+                    if (followToday && !date.equals(projectionToday)) prepareProjection();
+                    else selectDate(date);
                 });
                 previewControls.setVisibility(View.VISIBLE);
+                // Read the latest selection: a restored picker may confirm while this work runs.
+                LocalDate preview = followToday ? today : selectedDate;
                 selectDate(preview != null && range.dates.contains(preview) ? preview : today);
             });
         });
+    }
+
+    private void showObservationDatePicker() {
+        if (range == null || selectedDate == null || !observationDate.isEnabled()
+                || getSupportFragmentManager().isStateSaved()
+                || getSupportFragmentManager().findFragmentByTag(OBSERVATION_PICKER) != null) return;
+        long start = pickerMillis(range.start), end = pickerMillis(range.end);
+        CalendarConstraints constraints = new CalendarConstraints.Builder()
+                .setStart(start).setEnd(end).setOpenAt(pickerMillis(selectedDate))
+                .setValidator(CompositeDateValidator.allOf(Arrays.asList(
+                        DateValidatorPointForward.from(start), DateValidatorPointBackward.before(end))))
+                .build();
+        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(R.string.breakdown_choose_observation_date)
+                .setSelection(pickerMillis(selectedDate))
+                .setCalendarConstraints(constraints).build();
+        connectObservationDatePicker(picker);
+        picker.showNow(getSupportFragmentManager(), OBSERVATION_PICKER);
+    }
+
+    // Material pickers represent calendar dates at midnight UTC, independently of device time zone.
+    private static long pickerMillis(LocalDate date) {
+        return date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+    }
+
+    private void connectObservationDatePicker(MaterialDatePicker<Long> picker) {
+        picker.clearOnPositiveButtonClickListeners();
+        picker.addOnPositiveButtonClickListener(millis -> {
+            if (millis == null) return;
+            LocalDate date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate();
+            if (range != null && !range.dates.contains(date)) return;
+            selectedDate = date;
+            followToday = date.equals(LocalDate.now());
+            if (range != null && observationDate.isEnabled()) selectDate(date);
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void rebindObservationDatePicker() {
+        androidx.fragment.app.Fragment fragment = getSupportFragmentManager().findFragmentByTag(OBSERVATION_PICKER);
+        if (fragment instanceof MaterialDatePicker<?>) connectObservationDatePicker((MaterialDatePicker<Long>) fragment);
+    }
+
+    private void shiftDate(int amount, ChronoUnit unit) {
+        if (range == null || selectedDate == null || !dateSlider.isEnabled()) return;
+        // Calendar jumps clamp to a valid day in shorter months, then to the timeline bounds.
+        LocalDate date = selectedDate.plus(amount, unit);
+        if (date.isBefore(range.start)) date = range.start;
+        if (date.isAfter(range.end)) date = range.end;
+        followToday = date.equals(LocalDate.now());
+        selectDate(date);
+    }
+
+    private void setDateButtonsEnabled(boolean backward, boolean forward) {
+        for (View button : backwardDateButtons) {
+            button.setEnabled(backward);
+            button.setAlpha(backward ? 1f : 0.35f);
+        }
+        for (View button : forwardDateButtons) {
+            button.setEnabled(forward);
+            button.setAlpha(forward ? 1f : 0.35f);
+        }
     }
 
     private void selectDate(LocalDate date) {
@@ -196,11 +263,17 @@ public class BreakdownActivity extends AppCompatActivity {
 
     private void renderDate(LocalDate date) {
         selectedDate = date;
+        boolean canMove = range != null && dateSlider.isEnabled();
+        setDateButtonsEnabled(canMove && date.isAfter(range.start), canMove && date.isBefore(range.end));
+        if (deductions != null) deductions.setObservationDate(date);
         SentenceCalculator.Result result = SentenceCalculator.calculatePreview(ProfileCalculationMapper.from(profile, date));
         observationDate.setText(getString(date.equals(LocalDate.now())
                         ? R.string.breakdown_observation_today : R.string.breakdown_observation_preview,
                 date.format(SentenceCalculator.DISPLAY_DATE)));
-        observationDate.setVisibility(View.VISIBLE);
+        observationDate.setContentDescription(getString(R.string.breakdown_observation_picker_description,
+                observationDate.getText()));
+        observationDate.setEnabled(range != null);
+        findViewById(R.id.breakdownObservationRow).setVisibility(View.VISIBLE);
         if (!result.available) {
             releaseDates.setVisibility(View.GONE);
             breakdownCard.setVisibility(View.GONE);
@@ -215,22 +288,19 @@ public class BreakdownActivity extends AppCompatActivity {
         maximumReleaseState.setText(dates.maximumReached ? R.string.breakdown_zero_reached : R.string.breakdown_release_estimate);
         releaseDates.setVisibility(View.VISIBLE);
         timeline.setPreview(date, dates);
+        // Release dates stay pinned at their first zero; balances keep counting with earned credits.
         Bundle values = BreakdownViewBinder.createArguments(
-                dates.minimumReached ? getString(R.string.breakdown_zero_balance)
-                        : getString(R.string.breakdown_balance_value, result.minimumText(date), result.minRemainingDays),
-                dates.maximumReached ? getString(R.string.breakdown_zero_balance)
-                        : getString(R.string.breakdown_balance_value, result.maximumText(date), result.maxRemainingDays),
+                getString(R.string.breakdown_balance_value, result.minimumText(date), result.minRemainingDays),
+                getString(R.string.breakdown_balance_value, result.maximumText(date), result.maxRemainingDays),
                 result);
         BreakdownViewBinder.bind(breakdownCard, values);
         status.setVisibility(View.GONE);
         breakdownCard.setVisibility(View.VISIBLE);
     }
 
-    private void postError(String message) {
-        runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) showError(message); });
-    }
-
     private void showError(String message) {
+        observationDate.setEnabled(false);
+        findViewById(R.id.deductionDatesPanel).setVisibility(View.GONE);
         releaseDates.setVisibility(View.GONE);
         previewControls.setVisibility(View.GONE);
         breakdownCard.setVisibility(View.GONE);
@@ -239,6 +309,7 @@ public class BreakdownActivity extends AppCompatActivity {
     }
 
     @Override protected void onSaveInstanceState(Bundle outState) {
+        if (deductions != null) deductions.saveState(outState);
         outState.putBoolean(STATE_TODAY, followToday);
         if (selectedDate != null) outState.putLong(STATE_DATE, selectedDate.toEpochDay());
         super.onSaveInstanceState(outState);

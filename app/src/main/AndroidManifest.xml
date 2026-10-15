@@ -29,11 +29,6 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".RegisterActivity"
-            android:exported="false"
-            android:theme="@style/Theme.MyApplication"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
             android:name=".BreakdownActivity"
             android:exported="false" />
         <activity

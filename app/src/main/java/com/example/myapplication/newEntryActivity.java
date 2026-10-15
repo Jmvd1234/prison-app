@@ -51,7 +51,6 @@ public class newEntryActivity extends AppCompatActivity {
     Spinner inputSTAL;
 
     Button saveEntryButton;
-    Button deleteEntryButton;
 
     SharedPreferences sp;
 
@@ -60,7 +59,7 @@ public class newEntryActivity extends AppCompatActivity {
 
     ConstraintLayout layout;
 
-    // Shared website-style switches, commitment date and optional conviction date.
+    // Shared triggers and separate jail/prison date inputs.
     private TriggerFormController triggerController;
     private AdditionalChargesController additionalChargesController;
     private ProfilePhotoController photoController;
@@ -153,8 +152,6 @@ public class newEntryActivity extends AppCompatActivity {
         saveEntryButton =
                 findViewById(R.id.saveEntryButton);
 
-        deleteEntryButton =
-                findViewById(R.id.deleteEntryButton);
 
 
         // =====================================================
@@ -185,9 +182,8 @@ public class newEntryActivity extends AppCompatActivity {
          * The LEA arrest date remains
          * owned by this Activity.
          *
-         * The commitment-date picker is now owned by
-         * TriggerFormController because its meaning can
-         * dynamically switch between jail and prison.
+         * TriggerFormController owns both separate custody date pickers
+         * and selects the calculation anchor according to the triggers.
          */
 
         inputLEADate.setOnClickListener(v -> {
@@ -215,13 +211,13 @@ public class newEntryActivity extends AppCompatActivity {
         ArrayAdapter<String> stalAdapter =
                 new ArrayAdapter<>(
                         this,
-                        android.R.layout.simple_spinner_item,
+                        R.layout.stal_spinner_item,
                         stalOptions
                 );
 
 
         stalAdapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item
+                R.layout.stal_spinner_dropdown_item
         );
 
 
@@ -234,7 +230,7 @@ public class newEntryActivity extends AppCompatActivity {
         // TRIGGER CONTROLLER
         // =====================================================
 
-        // The controller owns the three switches and the single conditional date field.
+        // The controller owns the switches and both custody date inputs.
 
         triggerController =
                 new TriggerFormController(
@@ -280,10 +276,6 @@ public class newEntryActivity extends AppCompatActivity {
         });
 
 
-        deleteEntryButton.setOnClickListener(v -> {
-
-            finish();
-        });
     }
 
 
@@ -642,7 +634,7 @@ public class newEntryActivity extends AppCompatActivity {
         // TRIGGER-SPECIFIC PROFILE DATA
         // =====================================================
 
-        // Copy the visible trigger inputs and retained optional conviction draft.
+        // Copy custody dates and optional drafts; validate them before calculating or saving.
 
         final SentenceCalculator.Result calculation;
         try {

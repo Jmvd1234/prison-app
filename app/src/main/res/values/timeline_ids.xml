@@ -2,4 +2,5 @@
 <resources>
     <item name="timelineMinimumReleaseLabel" type="id" />
     <item name="timelineMaximumReleaseLabel" type="id" />
+    <item name="timelineTodayLabel" type="id" />
 </resources>

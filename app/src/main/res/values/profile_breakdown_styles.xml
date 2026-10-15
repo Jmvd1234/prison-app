@@ -1,14 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <!-- Existing resource names remain compatible with the editable layouts. -->
-    <color name="breakdown_surface">@color/app_surface_color</color>
-    <color name="breakdown_gold">@color/app_section_color</color>
-    <color name="breakdown_total_background">@color/app_section_color</color>
-    <color name="breakdown_rule">@color/app_outline</color>
-    <color name="breakdown_ink">@color/app_ink</color>
-    <color name="breakdown_secondary_ink">@color/app_secondary_ink</color>
-    <color name="breakdown_button_green">@color/app_text_accent_color</color>
-
+    <!-- Shared popup/activity table styles use the same LAYA palette roles. -->
     <style name="BreakdownCell">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
@@ -17,35 +9,45 @@
         <item name="android:paddingHorizontal">6dp</item>
         <item name="android:paddingVertical">10dp</item>
         <item name="android:gravity">end|center_vertical</item>
-        <item name="android:textColor">@color/breakdown_ink</item>
+        <item name="android:textColor">@color/laya_primary</item>
         <item name="android:textSize">14sp</item>
         <item name="android:fontFeatureSettings">tnum</item>
     </style>
-
     <style name="BreakdownCell.Heading">
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/app_text_accent_color</item>
+        <item name="android:textColor">@color/laya_white</item>
     </style>
-
+    <style name="BreakdownCell.Credit">
+        <item name="android:maxLines">1</item>
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMinTextSize">10sp</item>
+        <item name="autoSizeMaxTextSize">14sp</item>
+        <item name="autoSizeStepGranularity">1sp</item>
+    </style>
+    <style name="BreakdownCell.Credit.Total">
+        <item name="android:textStyle">bold</item>
+    </style>
     <style name="BreakdownCell.Label">
         <item name="android:gravity">start|center_vertical</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/app_text_accent_color</item>
+        <item name="android:textColor">@color/laya_text</item>
     </style>
-
     <style name="BreakdownBalanceLabel">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/breakdown_secondary_ink</item>
+        <item name="android:textColor">@color/laya_label</item>
         <item name="android:textSize">14sp</item>
     </style>
-
     <style name="BreakdownBalanceValue">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginTop">4dp</item>
-        <item name="android:textColor">@color/breakdown_ink</item>
+        <item name="android:textColor">@color/laya_primary</item>
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
+    </style>
+    <style name="BreakdownCell.Total">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/laya_primary</item>
     </style>
 </resources>

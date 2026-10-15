@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prison_transfer_label">Prison Commitment Date, if any</string>
+    <string name="prison_transfer_clear">Clear</string>
+    <string name="prison_transfer_clear_description">Clear prison commitment date</string>
+    <string name="jail_commitment_optional">Jail Commitment Date, if any</string>
+</resources>

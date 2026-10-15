@@ -54,6 +54,9 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.*;
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
 @RunWith(AndroidJUnit4.class)
 @SdkSuppress(minSdkVersion = 29) // Fixtures use scoped MediaStore insertion without broad permissions.
@@ -179,9 +182,29 @@ public class ProfilePhotoTest {
         }
         Profile toDelete = storedProfile(importPhoto(replacement));
         File deletedPhoto = ProfilePhotoStore.resolve(context, toDelete.image_path);
-        try (ActivityScenario<editProfileActivity> screen = edit(toDelete.profileID)) {
-            screen.onActivity(activity -> activity.findViewById(R.id.deleteEntryButton).performClick());
-            await(() -> screen.getState() == Lifecycle.State.DESTROYED);
+        try (ActivityScenario<DashboardActivity> screen = ActivityScenario.launch(DashboardActivity.class)) {
+            awaitScreen(screen, activity -> activity.profileModels.size() == 2);
+            screen.onActivity(activity -> {
+                for (int i = 0; i < activity.profileModels.size(); i++) {
+                    if (activity.profileModels.get(i).getProfileID() == toDelete.profileID) {
+                        ((RecyclerView) activity.findViewById(R.id.profileRecyclerView)).scrollToPosition(i);
+                    }
+                }
+            });
+            awaitScreen(screen, activity -> {
+                RecyclerView list = activity.findViewById(R.id.profileRecyclerView);
+                for (int i = 0; i < activity.profileModels.size(); i++) {
+                    if (activity.profileModels.get(i).getProfileID() == toDelete.profileID) {
+                        RecyclerView.ViewHolder row = list.findViewHolderForAdapterPosition(i);
+                        if (row == null) return false;
+                        row.itemView.findViewById(R.id.deleteProfileEntryButton).performClick();
+                        return true;
+                    }
+                }
+                return false;
+            });
+            onView(withId(android.R.id.button1)).perform(click());
+            awaitScreen(screen, activity -> activity.profileModels.size() == 1);
         }
         assertNull(db.ProfileDao().getProfileByProfileID(toDelete.profileID));
         await(() -> !deletedPhoto.exists());

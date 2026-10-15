@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_choose_profile">Choose a profile</string>
+    <string name="login_picker_subtitle">Select a profile to open its saved entries.</string>
+    <string name="login_guest">Guest</string>
+    <string name="login_guest_subtitle">Continue without a password</string>
+    <string name="login_no_password">No password</string>
+    <string name="login_password_protected">Password required</string>
+    <string name="login_unnamed">Unnamed profile</string>
+    <string name="login_empty_hint">Create a profile to keep your entries separate.</string>
+    <string name="login_create_button">+ Create profile</string>
+    <string name="login_create_title">Create profile</string>
+    <string name="login_unlock_title">Unlock %1$s</string>
+    <string name="login_create_action">Create</string>
+    <string name="login_unlock_action">Enter</string>
+    <string name="login_cancel">Cancel</string>
+    <string name="login_retry">Retry</string>
+    <string name="login_working">Please wait</string>
+    <string name="login_username">Username</string>
+    <string name="login_username_hint">e.g. Alex</string>
+    <string name="login_password">Password</string>
+    <string name="login_password_hint">Enter password</string>
+    <string name="login_require_password">Require password</string>
+    <string name="login_created">Profile created</string>
+    <string name="login_switch_profile">Switch profile</string>
+    <string name="login_local_note">Profiles and entries are saved on this device, including Guest entries.</string>
+    <string name="login_name_required">Enter a username.</string>
+    <string name="login_name_too_long">Use 40 characters or fewer for the username.</string>
+    <string name="login_guest_name_reserved">Guest is the built-in profile. Choose another username.</string>
+    <string name="login_name_taken">A profile with this username already exists.</string>
+    <string name="login_password_required">Enter a password or turn off Require password.</string>
+    <string name="login_password_too_long">Use 256 characters or fewer for the password.</string>
+    <string name="login_password_incorrect">Incorrect password. Try again.</string>
+    <string name="login_profile_missing">This profile is no longer available.</string>
+    <string name="login_operation_failed">Unable to open or save the profile. Please try again.</string>
+    <string name="login_delete_description">Delete profile %1$s</string>
+    <string name="login_delete_first_title">Delete %1$s?</string>
+    <string name="login_delete_first_message">This will delete the profile “%1$s” and all its saved entries, charges, deduction months and attached photos from this device. Continue?</string>
+    <string name="login_delete_continue">Continue</string>
+    <string name="login_delete_final_title">Confirm permanent deletion</string>
+    <string name="login_delete_final_message">Delete “%1$s” and its saved entries permanently? This cannot be undone.</string>
+    <string name="login_delete_password_label">Enter this profile’s password to confirm</string>
+    <string name="login_delete_action">Delete profile</string>
+    <string name="login_deleted">Profile and saved entries deleted</string>
+    <string name="login_delete_failed">Unable to delete the profile. Please try again.</string>
+    <string name="login_delete_guest_blocked">The built-in Guest profile cannot be deleted.</string>
+
+    <style name="LoginFieldLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/laya_label</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+    </style>
+    <style name="LoginTextField" parent="AppEditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+</resources>

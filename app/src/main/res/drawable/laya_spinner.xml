@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:paddingMode="stack">
+    <item android:drawable="@drawable/entertextbox"/>
+    <item
+        android:width="12dp"
+        android:height="12dp"
+        android:right="10dp"
+        android:gravity="end|center_vertical"
+        android:drawable="@drawable/laya_chevron"/>
+</layer-list>

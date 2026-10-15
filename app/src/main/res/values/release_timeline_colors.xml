@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="release_minimum_marker">#C45100</color>
-    <color name="release_maximum_marker">#C62828</color>
-    <color name="release_marker_halo">@color/white</color>
+    <color name="release_minimum_marker">@color/laya_warning_text</color>
+    <color name="release_maximum_marker">@color/laya_danger</color>
+    <color name="release_marker_halo">@color/laya_white</color>
 </resources>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="InfoTooltip">
+        <attr name="helpTitle" format="string"/>
+        <attr name="helpText" format="string"/>
+    </declare-styleable>
+    <style name="InfoTooltipButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_gravity">center_vertical</item>
+    </style>
+    <string name="tooltip_help">Help: %1$s</string>
+    <!-- Verbatim field tooltips from https://layacalculator.org/calculator/, checked 2026-10-13. -->
+    <string name="tooltip_lea_title">LEA Arrest Date</string>
+    <string name="tooltip_lea">Law Enforcement Agency - Examples: PNP, NBI, PDEA, BI</string>
+    <string name="tooltip_cpi_title">Disqualified for CPI</string>
+    <string name="tooltip_cpi">Credit for Preventive Imprisonment</string>
+    <string name="tooltip_ta_title">Disqualified for Time Allowances</string>
+    <string name="tooltip_ta">Good Conduct Time Allowance and Time Allowance for Studying, Teaching and Mentoring</string>
+    <!-- App-specific explanations describe the current calculator and controls. -->
+    <string name="tooltip_charges_title">Multiple charges</string>
+    <string name="tooltip_charges">Add each charge separately. The app combines minimum terms and maximum terms separately. Each combined total is capped at three times its longest term or 40 years, whichever is lower. Time allowances apply to the combined sentence.</string>
+    <string name="tooltip_transfer_title">Prison commitment date</string>
+    <string name="tooltip_transfer">Prison commitment is optional normally and when only Time Allowances is checked. In the Time Allowances case, credits begin from this date; without it, no GCTA or TASTM is earned. CPI requires prison commitment and allows an optional earlier jail date for the custody breakdown. Not Committed to Jail disables jail and requires prison. A normal jail-to-prison transfer does not restart the GCTA tier.</string>
+    <string name="tooltip_observation_title">Observation date</string>
+    <string name="tooltip_observation">Tap the underlined date to choose any date within the slider’s range. The slider and breakdown update using credits earned as of that date. This is a preview and does not change the saved profile. Tap the Today milestone to return to the current date.</string>
+    <string name="tooltip_markers_title">Release-date markers</string>
+    <string name="tooltip_markers">The minimum and maximum release labels move with the credits earned by the selected date. Outlined markers are estimates. A large filled dot appears when that balance reaches zero. Tap a release label to jump to its zero date. Release dates stay pinned there, while remaining balances continue below zero and turn red.</string>
+    <string name="tooltip_deductions_title">Monthly and manual deductions</string>
+    <string name="tooltip_deductions">Checked GCTA or TASTM removes that month’s credit; uncheck it to keep the credit. Recalculate saves the changes. Monthly deductions apply only once those credits are earned. While any months exist, they override the manual deduction and lock its input in Edit Profile. Remove all months and recalculate to restore the saved manual amount.</string>
+</resources>

@@ -28,7 +28,12 @@ public class Profile {
     // Unused legacy snapshot. Live calculations use today's/preview date.
     public String observationDate;
     public String leaArrestDate;
+    // Effective calculation anchor: jail normally, prison for Not Committed/CPI.
     public String commitmentDate;
+    @androidx.room.ColumnInfo(defaultValue = "0")
+    public boolean separateCustodyDates;
+    // Dedicated prison input: optional after jail, required for Not Committed/CPI.
+    public String prisonTransferDate;
 
     // The first form row uses these temporary fields. All penalties are stored in ProfileCharge.
     @Ignore public int minYears;
@@ -38,6 +43,7 @@ public class Profile {
     @Ignore public int maxMonths;
     @Ignore public int maxDays;
     @Ignore public List<ProfileCharge> charges = new ArrayList<>();
+    @Ignore public List<com.example.myapplication.DeductionMonth> deductionMonths = new ArrayList<>();
 
     public boolean notCommittedToJail;
     public boolean disqualifiedForCPI;
@@ -53,13 +59,13 @@ public class Profile {
     // App-private relative photo filename; null/empty means the default placeholder.
     public String image_path;
 
-    // Optional website conviction input; used only when TA is checked and CPI is not.
+    // Retired form field. TA allowance calculations now use the dedicated prison date.
     public String convictionDate;
-    // Unused legacy fields; these dates and the timeline flag do not gate calculations.
+    // Legacy service metadata remains unused. Jail/prison drafts are populated by the separate inputs.
     public String sentenceServiceStartDate; // Verified enforcement start; nullable.
     public String imprisonmentStartDate;    // Original allowance/tier clock.
-    public String jailCommitmentDate;       // Preserved jail-date input.
-    public String prisonCommitmentDate;     // Separate prison-date input.
+    public String jailCommitmentDate;       // Separate jail input/draft.
+    public String prisonCommitmentDate;     // Separate prison input; also retained as a legacy fallback.
 
     @androidx.room.ColumnInfo(defaultValue = "0")
     public int cpiCreditPercent = 0;         // Legacy column; website calculations ignore it.

@@ -56,14 +56,14 @@ public class MovingReleaseLabelsTest {
         assertEquals(1, range.positionOf(range.end.plusDays(1)), 0);
     }
 
-    @Test public void axisIncludesSignedConvictionCreditJumpAtCommitment() {
+    @Test public void retiredConvictionCannotCreateNegativeCreditsOrMoveTheAxis() {
         Profile p = profile();
         p.disqualifiedForTimeAllowances = true;
         p.convictionDate = "2025-02-01";
         SentenceProjection.Range range = SentenceProjection.create(p, LocalDate.of(2024, 2, 1));
         LocalDate atArrest = preview(p, range, range.start).maximum;
         LocalDate atCommitment = preview(p, range, range.commitment).maximum;
-        assertTrue(atCommitment.isAfter(atArrest));
+        assertEquals(atArrest, atCommitment);
         assertEquals(atCommitment, range.end);
     }
 

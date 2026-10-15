@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import com.example.myapplication.db.ProfileCharge;
 
-/** Maps exactly the website-style inputs; retired metadata cannot gate calculations. */
+/** Maps website-style inputs and an explicit custody transfer; ignores retired metadata. */
 public final class ProfileCalculationMapper {
     private ProfileCalculationMapper() { }
 
@@ -19,8 +19,12 @@ public final class ProfileCalculationMapper {
         input.observationDate = observation.toString();
         input.leaArrestDate = p.leaArrestDate;
         input.commitmentDate = commitmentDate(p);
+        input.prisonTransferDate = prisonTransferDate(p);
+        input.jailBeforePrisonDate = jailBeforePrisonDate(p);
+        input.allowanceStartIsPrison = SentenceCalculator.usesConvictionDate(
+                p.notCommittedToJail, p.disqualifiedForCPI, p.disqualifiedForTimeAllowances);
         input.convictionDate = SentenceCalculator.usesConvictionDate(
-                p.disqualifiedForCPI, p.disqualifiedForTimeAllowances) ? p.convictionDate : null;
+                p.notCommittedToJail, p.disqualifiedForCPI, p.disqualifiedForTimeAllowances) ? prisonInputDate(p) : null;
         input.minYears = p.minYears;
         input.minMonths = p.minMonths;
         input.minDays = p.minDays;
@@ -36,6 +40,7 @@ public final class ProfileCalculationMapper {
         input.disqualifiedForTimeAllowances = p.disqualifiedForCPI || p.disqualifiedForTimeAllowances;
         input.timeGapDays = p.timeGapDays;
         input.deductionDays = p.deductionDays;
+        input.deductionMonths = p.deductionMonths == null ? null : new ArrayList<>(p.deductionMonths);
         input.stalPercent = p.stalPercent;
         // Retired CPI-rate/timeline/service fields do not exist on the website form.
         return input;
@@ -46,5 +51,31 @@ public final class ProfileCalculationMapper {
         String stored = SentenceCalculator.usesPrisonCommitment(p.notCommittedToJail, p.disqualifiedForCPI)
                 ? p.prisonCommitmentDate : p.jailCommitmentDate;
         return stored == null ? "" : stored;
+    }
+
+    public static String jailInputDate(Profile p) {
+        if (!SentenceCalculator.usesPrisonCommitment(p.notCommittedToJail, p.disqualifiedForCPI)) {
+            return commitmentDate(p);
+        }
+        // Old switch drafts were not separate recorded stages.
+        return p.separateCustodyDates && p.jailCommitmentDate != null ? p.jailCommitmentDate : "";
+    }
+
+    public static String prisonInputDate(Profile p) {
+        if (SentenceCalculator.usesPrisonCommitment(p.notCommittedToJail, p.disqualifiedForCPI)) {
+            return commitmentDate(p);
+        }
+        return p.prisonTransferDate == null ? "" : p.prisonTransferDate;
+    }
+
+    public static String jailBeforePrisonDate(Profile p) {
+        return p.separateCustodyDates && p.disqualifiedForCPI && !p.notCommittedToJail
+                ? p.jailCommitmentDate : null;
+    }
+
+    public static String prisonTransferDate(Profile p) {
+        // A direct prison commitment already supplies the prison entry date.
+        return SentenceCalculator.usesPrisonCommitment(p.notCommittedToJail, p.disqualifiedForCPI)
+                ? null : p.prisonTransferDate;
     }
 }

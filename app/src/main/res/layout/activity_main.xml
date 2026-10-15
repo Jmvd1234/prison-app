@@ -1,112 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/login_background"
-    tools:context=".MainActivity">
+    android:background="@color/laya_background"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="56dp"
-        android:gravity="center"
         android:orientation="vertical"
-        app:layout_constraintBaseline_toTopOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="-193dp">
+        android:paddingTop="24dp"
+        android:paddingBottom="32dp">
 
         <ImageView
-            android:layout_width="360dp"
-            android:layout_height="160dp"
-            android:layout_marginTop="5dp"
-            android:background="@drawable/login_title"
-            android:backgroundTint="@color/app_outline"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:paddingHorizontal="60dp"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"
             android:src="@drawable/laya_logo_transparent" />
 
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout2"
-        android:layout_width="360dp"
-        android:layout_height="150dp"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/credentials_background"
-        android:backgroundTint="@color/app_outline"
-        android:gravity="center"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <EditText
-            android:id="@+id/signInUsername"
-            android:layout_width="300dp"
-            android:layout_height="wrap_content"
-            android:hint="Username"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"
-            android:textSize="20sp" />
-
-        <EditText
-            android:id="@+id/signInPassword"
-            android:layout_width="300dp"
-            android:layout_height="wrap_content"
-            android:hint="Password"
-            android:paddingTop="18dp"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black"
-            android:textSize="20sp"
-            android:inputType="textPassword"/>
-
         <TextView
-            android:id="@+id/registerPrompt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="7dp"
-            android:layout_marginBottom="5dp"
-            android:text="New User? Register Account"
-            android:clickable="true"
-            android:focusable="true"/>
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="360dp"
-        android:layout_marginTop="10dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
-
-        <Button
-            android:id="@+id/signInButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@color/app_outline"
-            android:onClick="signIn"
-            android:text="Sign In"
-            android:textColor="@color/app_button_text_color"
-            android:textSize="30sp" />
+            android:layout_marginTop="24dp"
+            android:paddingHorizontal="28dp"
+            android:text="@string/login_choose_profile"
+            android:textColor="@color/laya_text"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:paddingHorizontal="28dp"
+            android:text="@string/login_picker_subtitle"
+            android:textColor="@color/laya_label"
+            android:textSize="14sp" />
+
+        <ProgressBar
+            android:id="@+id/loginProfilesLoading"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:contentDescription="@string/login_working"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/loginProfilesStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="28dp"
+            android:accessibilityLiveRegion="polite"
+            android:textColor="@color/laya_danger"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/loginProfilesRetry"
+            style="@style/AppTextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/login_retry"
+            android:visibility="gone" />
+
+        <!-- Populated from local User rows. Guest is always first. -->
+        <LinearLayout
+            android:id="@+id/loginProfilesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/loginProfilesEmptyHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="28dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/login_empty_hint"
+            android:textColor="@color/laya_muted"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/createLoginProfileButton"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginHorizontal="12dp"
+            android:background="@drawable/button_background"
+            android:backgroundTint="@null"
+            android:elevation="0dp"
+            android:stateListAnimator="@null"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingLeft="28dp"
+            android:paddingRight="28dp"
+            android:paddingTop="22dp"
+            android:paddingBottom="30dp"
+            android:text="@string/login_create_button"
+            android:textAllCaps="false"
+            android:textColor="@color/laya_white"
+            android:textSize="16sp"
+            app:backgroundTint="@null" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="28dp"
+            android:layout_marginTop="12dp"
+            android:text="@string/login_local_note"
+            android:textColor="@color/laya_muted"
+            android:textSize="12sp" />
     </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:focusable="true"
-        android:layout_marginBottom="15dp"
-        android:textColor="@color/black"
-        android:text="Laya does not upload any data to the internet \n
-and works fully offline. Login is only used to \n distinguish user accounts on the same device"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

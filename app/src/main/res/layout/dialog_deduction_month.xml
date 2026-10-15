@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="24dp" android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/deduction_dialog_title" android:textColor="@color/laya_text" android:textSize="20sp" android:textStyle="bold"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/deductionDialogClose" style="@style/AppTextButton" android:layout_width="48dp" android:layout_height="48dp" android:minWidth="0dp" android:padding="0dp" android:text="×" android:textSize="26sp" android:textColor="@color/laya_muted" android:contentDescription="@string/deduction_close"/>
+        </LinearLayout>
+        <TextView style="@style/DeductionLabel" android:layout_marginTop="16dp" android:layout_marginBottom="8dp" android:text="@string/deduction_month_label" android:textColor="@color/laya_text" android:labelFor="@id/deductionDialogMonth"/>
+        <androidx.appcompat.widget.AppCompatSpinner android:id="@+id/deductionDialogMonth" android:layout_width="match_parent" android:layout_height="48dp" android:entries="@array/deduction_months" android:spinnerMode="dropdown" android:saveEnabled="false"/>
+        <TextView style="@style/DeductionLabel" android:layout_marginTop="16dp" android:layout_marginBottom="8dp" android:text="@string/deduction_year_label" android:textColor="@color/laya_text" android:labelFor="@id/deductionDialogYear"/>
+        <androidx.appcompat.widget.AppCompatEditText android:id="@+id/deductionDialogYear" style="@style/DeductionField" android:inputType="number" android:singleLine="true" android:maxLength="4" android:hint="@string/deduction_year_hint" android:saveEnabled="false"/>
+        <TextView android:id="@+id/deductionDialogPreview" style="@style/DeductionLabel" android:layout_marginTop="16dp" android:background="@drawable/laya_warning_box" android:padding="12dp" android:visibility="gone"/>
+        <TextView android:id="@+id/deductionDialogError" style="@style/DeductionLabel" android:layout_marginTop="12dp" android:textColor="@color/laya_danger" android:accessibilityLiveRegion="polite" android:visibility="gone"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:gravity="end" android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton android:id="@+id/deductionDialogCancel" style="@style/DeductionOutlineButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/deduction_cancel"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/deductionDialogAdd" style="@style/AppFilledButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:text="@string/deduction_add" android:textAllCaps="false" android:enabled="false"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

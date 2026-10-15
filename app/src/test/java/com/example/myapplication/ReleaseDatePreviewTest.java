@@ -58,6 +58,42 @@ public class ReleaseDatePreviewTest {
         assertTrue(later.maximum.isBefore(atZero.maximum));
     }
 
+    @Test public void layaLeapDayJumpKeepsFirstReleaseOnCreditDayAndMaximumBetweenCredits() {
+        Profile p = profile();
+        p.leaArrestDate = p.commitmentDate = "2024-01-31";
+        p.minYears = p.maxYears = 0;
+        p.minMonths = 2; p.maxMonths = 3;
+        SentenceProjection.Range range = SentenceProjection.create(p, LocalDate.of(2024, 3, 31));
+        LocalDate before = LocalDate.of(2024, 2, 28), earned = before.plusDays(1);
+        // Independently observed LAYA results: +32 on Feb 28, then -4 on Feb 29.
+        assertEquals(32, result(p, before).minRemainingDays);
+        assertEquals(-4, result(p, earned).minRemainingDays);
+        assertEquals(earned, range.minimumCompletion);
+        assertEquals(earned, dates(p, range, earned).minimum);
+        assertEquals(earned, dates(p, range, earned.plusDays(1)).minimum);
+        assertEquals(-5, result(p, earned.plusDays(1)).minRemainingDays);
+        // The maximum reaches zero through daily custody, before the next credit on March 31.
+        assertEquals(LocalDate.of(2024, 3, 26), range.maximumCompletion);
+        assertEquals(1, result(p, range.maximumCompletion.minusDays(1)).maxRemainingDays);
+        assertEquals(0, result(p, range.maximumCompletion).maxRemainingDays);
+        assertEquals(1, range.dates.indexOf(earned) - range.dates.indexOf(before));
+    }
+
+    @Test public void withholdingLeapMonthCreditsMovesFirstZeroToActualCompletionDay() {
+        Profile p = profile();
+        p.leaArrestDate = p.commitmentDate = "2024-01-31";
+        p.minYears = p.maxYears = 0; p.minMonths = 2; p.maxMonths = 3;
+        p.deductionMonths.add(new DeductionMonth(2024, 1, true, true));
+        SentenceProjection.Range range = SentenceProjection.create(p, LocalDate.of(2024, 3, 31));
+        assertEquals(0, result(p, LocalDate.of(2024, 2, 28)).appliedDeductionDays);
+        assertEquals(35, result(p, LocalDate.of(2024, 2, 29)).appliedDeductionDays);
+        assertEquals(31, result(p, LocalDate.of(2024, 2, 29)).minRemainingDays);
+        assertEquals(LocalDate.of(2024, 3, 31), range.minimumCompletion);
+        assertEquals(range.minimumCompletion, range.maximumCompletion);
+        assertTrue(result(p, range.minimumCompletion.minusDays(1)).minRemainingDays > 0);
+        assertEquals(-35, result(p, range.minimumCompletion).minRemainingDays);
+    }
+
     @Test public void bothDatesStayFixedAfterCompletionAndRewindRestoresEstimates() {
         Profile p = profile();
         SentenceProjection.Range range = SentenceProjection.create(p, LocalDate.of(2026, 10, 10));

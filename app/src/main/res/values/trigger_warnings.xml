@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Exact warning dialog text from https://layacalculator.org/calculator/, checked 2026-10-14. -->
+    <string name="trigger_warning_title">WARNING</string>
+    <string name="trigger_warning_cancel">Cancel</string>
+    <string name="trigger_warning_confirm">Confirm</string>
+    <string name="trigger_warning_cpi">The court record MUST state that the PDL is a recidivist, had previously been convicted twice, or failed to voluntarily surrender to summons.\n\nIf the court record does not show this or you do not know the content of the court record, DO NOT TICK THIS BOX.</string>
+    <string name="trigger_warning_time_allowances">The court record MUST state that the PDL is a recidivist/habitual delinquent/escapee, had previously been convicted twice, failed to voluntarily surrender to summons, or the judge acknowledges that the crime charged is a heinous crime.\n\nIf the court record does not show any of these or you do not know the content of the court record, DO NOT TICK THIS BOX.</string>
+</resources>

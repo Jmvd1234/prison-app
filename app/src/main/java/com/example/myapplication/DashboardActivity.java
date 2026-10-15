@@ -12,6 +12,8 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -21,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.myapplication.db.AppDatabase;
 import com.example.myapplication.db.Profile;
 import com.example.myapplication.db.ProfileDao;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -60,6 +63,8 @@ public class DashboardActivity extends AppCompatActivity {
             new ArrayList<>();
 
     Profile_RecyclerViewAdapter adapter;
+    private EntryDeletionViewModel entryDeletion;
+    private AlertDialog deleteConfirmation;
 
     Spinner sortDropdown;
     Spinner orderDropdown;
@@ -151,7 +156,8 @@ public class DashboardActivity extends AppCompatActivity {
         adapter =
                 new Profile_RecyclerViewAdapter(
                         this,
-                        profileModels
+                        profileModels,
+                        this::confirmDeleteEntry
                 );
 
 
@@ -165,6 +171,17 @@ public class DashboardActivity extends AppCompatActivity {
                         this
                 )
         );
+
+
+        entryDeletion = new ViewModelProvider(this).get(EntryDeletionViewModel.class);
+        entryDeletion.result.observe(this, success -> {
+            if (success == null) return;
+            entryDeletion.result.setValue(null);
+            // Reload from Room so the current sort and every remaining card stay correct.
+            setUpProfileModels();
+            Toast.makeText(this, success ? R.string.entry_deleted : R.string.profile_delete_failed,
+                    Toast.LENGTH_SHORT).show();
+        });
 
 
         // =====================================================
@@ -281,6 +298,30 @@ public class DashboardActivity extends AppCompatActivity {
     public void goHome(View v) {
 
         finish();
+    }
+
+
+    private void confirmDeleteEntry(profileModel selected) {
+        if (entryDeletion.isBusy() || isFinishing() || isDestroyed()
+                || (deleteConfirmation != null && deleteConfirmation.isShowing())) return;
+        final int profileID = selected.getProfileID();
+        final long userID = sp.getLong("currentUserID", -1L);
+        if (userID < 0) return;
+        String name = (selected.getFirstName() + " " + selected.getLastName()).trim();
+        deleteConfirmation = new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.delete_entry_title)
+                .setMessage(getString(R.string.delete_entry_message, name))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.delete_entry, (dialog, which) -> {
+                    if (sp.getLong("currentUserID", -1L) != userID) return;
+                    ++loadGeneration; // Ignore any snapshot loaded before this deletion.
+                    entryDeletion.delete(profileID, userID);
+                })
+                .create();
+        deleteConfirmation.setOnDismissListener(dialog -> deleteConfirmation = null);
+        deleteConfirmation.show();
+        deleteConfirmation.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(getColor(R.color.laya_danger));
     }
 
 
@@ -617,6 +658,7 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         dateObserver.stop();
+        if (deleteConfirmation != null) deleteConfirmation.dismiss();
         super.onPause();
     }
 

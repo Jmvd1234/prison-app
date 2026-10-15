@@ -1,61 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- UI draft only. Each added charge uses this editable layout. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="8dp"
     android:orientation="vertical">
-
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/breakdown_rule" />
-
+        android:background="@color/laya_border"/>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-
         <TextView
             android:id="@+id/chargeTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="@color/black"
+            android:textColor="@color/laya_text"
             android:textSize="16sp"
-            android:textStyle="bold" />
-
+            android:textStyle="bold"/>
         <com.google.android.material.button.MaterialButton
             android:id="@+id/removeChargeButton"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/AppTextButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:minWidth="0dp"
             android:padding="0dp"
             android:text="@string/remove_charge_symbol"
             android:textSize="24sp"
-            android:textColor="@color/breakdown_button_green" />
+            android:textColor="@color/laya_primary"/>
     </LinearLayout>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center">
-
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Min. Penalty Period"
-            android:textColor="@color/black"
-            android:textSize="20sp"/>
-
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:textColor="@color/laya_label"
+            android:textSize="16sp"
             android:layout_weight="1"/>
-
         <EditText
+            xmlns:ns0="http://schemas.android.com/apk/res-auto"
             android:id="@+id/chargeMinYears"
             android:layout_width="50dp"
             android:layout_height="32dp"
@@ -65,9 +56,14 @@
             android:textSize="11sp"
             android:hint="Years"
             android:inputType="number"
-            android:textColor="@color/black"/>
-
+            android:textColor="@color/laya_input_text"
+            android:textColorHint="@color/laya_muted"
+            ns0:backgroundTint="@null"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingEnd="4dp"/>
         <EditText
+            xmlns:ns1="http://schemas.android.com/apk/res-auto"
             android:id="@+id/chargeMinMonths"
             android:layout_width="50dp"
             android:layout_height="32dp"
@@ -77,10 +73,15 @@
             android:textSize="11sp"
             android:hint="Months"
             android:inputType="number"
-            android:textColor="@color/black"
-            android:layout_marginStart="5dp"/>
-
+            android:textColor="@color/laya_input_text"
+            android:layout_marginStart="5dp"
+            android:textColorHint="@color/laya_muted"
+            ns1:backgroundTint="@null"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingEnd="4dp"/>
         <EditText
+            xmlns:ns2="http://schemas.android.com/apk/res-auto"
             android:id="@+id/chargeMinDays"
             android:layout_width="50dp"
             android:layout_height="32dp"
@@ -90,28 +91,27 @@
             android:textSize="11sp"
             android:hint="Days"
             android:inputType="number"
-            android:textColor="@color/black"
-            android:layout_marginStart="5dp"/>
-
+            android:textColor="@color/laya_input_text"
+            android:layout_marginStart="5dp"
+            android:textColorHint="@color/laya_muted"
+            ns2:backgroundTint="@null"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingEnd="4dp"/>
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center">
-
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Max. Penalty Period"
-            android:textColor="@color/black"
-            android:textSize="20sp"/>
-
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:textColor="@color/laya_label"
+            android:textSize="16sp"
             android:layout_weight="1"/>
-
         <EditText
+            xmlns:ns3="http://schemas.android.com/apk/res-auto"
             android:id="@+id/chargeMaxYears"
             android:layout_width="50dp"
             android:layout_height="32dp"
@@ -121,9 +121,14 @@
             android:textSize="11sp"
             android:hint="Years"
             android:inputType="number"
-            android:textColor="@color/black"/>
-
+            android:textColor="@color/laya_input_text"
+            android:textColorHint="@color/laya_muted"
+            ns3:backgroundTint="@null"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingEnd="4dp"/>
         <EditText
+            xmlns:ns4="http://schemas.android.com/apk/res-auto"
             android:id="@+id/chargeMaxMonths"
             android:layout_width="50dp"
             android:layout_height="32dp"
@@ -133,10 +138,15 @@
             android:textSize="11sp"
             android:hint="Months"
             android:inputType="number"
-            android:textColor="@color/black"
-            android:layout_marginStart="5dp"/>
-
+            android:textColor="@color/laya_input_text"
+            android:layout_marginStart="5dp"
+            android:textColorHint="@color/laya_muted"
+            ns4:backgroundTint="@null"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingEnd="4dp"/>
         <EditText
+            xmlns:ns5="http://schemas.android.com/apk/res-auto"
             android:id="@+id/chargeMaxDays"
             android:layout_width="50dp"
             android:layout_height="32dp"
@@ -146,8 +156,12 @@
             android:textSize="11sp"
             android:hint="Days"
             android:inputType="number"
-            android:textColor="@color/black"
-            android:layout_marginStart="5dp"/>
-
+            android:textColor="@color/laya_input_text"
+            android:layout_marginStart="5dp"
+            android:textColorHint="@color/laya_muted"
+            ns5:backgroundTint="@null"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:paddingEnd="4dp"/>
     </LinearLayout>
 </LinearLayout>

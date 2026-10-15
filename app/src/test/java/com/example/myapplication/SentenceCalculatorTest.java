@@ -54,8 +54,8 @@ public class SentenceCalculatorTest {
             available(in);
             assertEquals(in.notCommittedToJail || in.disqualifiedForCPI,
                     SentenceCalculator.usesPrisonCommitment(in.notCommittedToJail, in.disqualifiedForCPI));
-            assertEquals(in.disqualifiedForTimeAllowances && !in.disqualifiedForCPI,
-                    SentenceCalculator.usesConvictionDate(in.disqualifiedForCPI, in.disqualifiedForTimeAllowances));
+            assertEquals(!in.notCommittedToJail && in.disqualifiedForTimeAllowances && !in.disqualifiedForCPI,
+                    SentenceCalculator.usesConvictionDate(in.notCommittedToJail, in.disqualifiedForCPI, in.disqualifiedForTimeAllowances));
         }
     }
 

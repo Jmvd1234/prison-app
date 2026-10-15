@@ -13,7 +13,17 @@ public class User {
     @ColumnInfo(name="username")
     public String username;
 
-   @ColumnInfo(name="password")
-    //REALLY BAD NEED TO CHANGE TO HASHING JUST TO GET THIS TEST SHIT OFF THE GROUND
+    @ColumnInfo(name="password")
+    // Legacy passwords are upgraded to a salted hash after a successful unlock.
     public String password;
+
+    public String passwordHash;
+
+    @ColumnInfo(defaultValue = "0")
+    public boolean isGuest;
+
+    public boolean requiresPassword() {
+        return !isGuest && ((passwordHash != null && !passwordHash.isEmpty())
+                || (password != null && !password.isEmpty()));
+    }
 }

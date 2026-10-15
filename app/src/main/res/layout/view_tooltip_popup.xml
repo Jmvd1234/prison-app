@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:background="@drawable/tooltip_background" android:fillViewport="false">
+    <TextView android:id="@+id/tooltipMessage"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="12dp" android:textColor="@color/laya_white"
+        android:textSize="14sp" android:lineSpacingExtra="2dp"/>
+</ScrollView>

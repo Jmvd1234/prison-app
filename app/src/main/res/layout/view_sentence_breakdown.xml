@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
-
     <!-- Shared by activity_breakdown.xml and dialog_profile_breakdown.xml. -->
     <TextView
         android:layout_width="match_parent"
@@ -12,9 +12,8 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="12dp"
         android:text="@string/breakdown_table_caption"
-        android:textColor="@color/breakdown_secondary_ink"
-        android:textSize="13sp" />
-
+        android:textColor="@color/laya_label"
+        android:textSize="13sp"/>
     <TableLayout
         android:id="@+id/custodyBreakdownTable"
         android:layout_width="match_parent"
@@ -25,118 +24,121 @@
         android:padding="1dp"
         android:showDividers="middle"
         android:stretchColumns="*">
-
         <TableRow
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/breakdown_gold">
-
-            <TextView style="@style/BreakdownCell.Label" android:importantForAccessibility="no" />
+            android:background="@color/laya_primary">
+            <TextView
+                style="@style/BreakdownCell.Label"
+                android:importantForAccessibility="no"/>
             <TextView
                 android:id="@+id/daysColumnLabel"
                 style="@style/BreakdownCell.Heading"
-                android:text="@string/breakdown_days" />
+                android:text="@string/breakdown_days"/>
             <TextView
                 android:id="@+id/gctaColumnLabel"
                 style="@style/BreakdownCell.Heading"
-                android:text="@string/breakdown_gcta" />
+                android:text="@string/breakdown_gcta"/>
             <TextView
                 android:id="@+id/tastmColumnLabel"
                 style="@style/BreakdownCell.Heading"
-                android:text="@string/breakdown_tastm" />
+                android:text="@string/breakdown_tastm"/>
         </TableRow>
-
-        <TableRow android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
             <TextView
                 android:id="@+id/leaRowLabel"
                 style="@style/BreakdownCell.Label"
-                android:text="@string/breakdown_lea" />
+                android:text="@string/breakdown_lea"/>
             <TextView
                 android:id="@+id/leaDaysValue"
                 style="@style/BreakdownCell"
-                tools:text="161" />
+                tools:text="161"/>
             <TextView
                 android:id="@+id/leaGctaValue"
-                style="@style/BreakdownCell"
-                tools:text="0" />
+                style="@style/BreakdownCell.Credit"
+                tools:text="0/0"/>
             <TextView
                 android:id="@+id/leaTastmValue"
-                style="@style/BreakdownCell"
-                tools:text="0" />
+                style="@style/BreakdownCell.Credit"
+                tools:text="0/0"/>
         </TableRow>
-
-        <TableRow android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
             <TextView
                 android:id="@+id/jailRowLabel"
                 style="@style/BreakdownCell.Label"
-                android:text="@string/breakdown_jail" />
+                android:text="@string/breakdown_jail"/>
             <TextView
                 android:id="@+id/jailDaysValue"
                 style="@style/BreakdownCell"
-                tools:text="610" />
+                tools:text="610"/>
             <TextView
                 android:id="@+id/jailGctaValue"
-                style="@style/BreakdownCell"
-                tools:text="400" />
+                style="@style/BreakdownCell.Credit"
+                tools:text="400/400"/>
             <TextView
                 android:id="@+id/jailTastmValue"
-                style="@style/BreakdownCell"
-                tools:text="300" />
+                style="@style/BreakdownCell.Credit"
+                tools:text="300/300"/>
         </TableRow>
-
-        <TableRow android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
             <TextView
                 android:id="@+id/prisonRowLabel"
                 style="@style/BreakdownCell.Label"
-                android:text="@string/breakdown_prison" />
+                android:text="@string/breakdown_prison"/>
             <TextView
                 android:id="@+id/prisonDaysValue"
                 style="@style/BreakdownCell"
-                tools:text="&#8212;" />
+                tools:text="—"/>
             <TextView
                 android:id="@+id/prisonGctaValue"
-                style="@style/BreakdownCell"
-                tools:text="&#8212;" />
+                style="@style/BreakdownCell.Credit"
+                tools:text="—"/>
             <TextView
                 android:id="@+id/prisonTastmValue"
-                style="@style/BreakdownCell"
-                tools:text="&#8212;" />
+                style="@style/BreakdownCell.Credit"
+                tools:text="—"/>
         </TableRow>
-
-        <TableRow android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/breakdown_total_background">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/laya_summary">
             <TextView
                 android:id="@+id/totalRowLabel"
                 style="@style/BreakdownCell.Label"
-                android:text="@string/breakdown_total" />
+                android:text="@string/breakdown_total"/>
             <TextView
                 android:id="@+id/totalDaysValue"
-                style="@style/BreakdownCell.Heading"
-                tools:text="771" />
+                style="@style/BreakdownCell.Total"
+                tools:text="771"/>
             <TextView
                 android:id="@+id/totalGctaValue"
-                style="@style/BreakdownCell.Heading"
-                tools:text="400" />
+                style="@style/BreakdownCell.Credit.Total"
+                tools:text="400/400"/>
             <TextView
                 android:id="@+id/totalTastmValue"
-                style="@style/BreakdownCell.Heading"
-                tools:text="300" />
+                style="@style/BreakdownCell.Credit.Total"
+                tools:text="300/300"/>
         </TableRow>
     </TableLayout>
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="@string/breakdown_legend"
-        android:textColor="@color/breakdown_secondary_ink"
-        android:textSize="12sp" />
-
+        android:textColor="@color/laya_muted"
+        android:textSize="12sp"/>
     <!-- STAL is a single sentence-wide credit, not a monthly custody-stage credit. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:background="@drawable/breakdown_table_background"
+        android:background="@drawable/laya_summary_box"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="12dp">
@@ -146,39 +148,71 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:labelFor="@id/stalCreditValue"
-            android:textColor="@color/breakdown_ink"
+            android:textColor="@color/laya_text"
             android:textSize="14sp"
             android:textStyle="bold"
-            tools:text="STAL (20%)" />
+            tools:text="STAL (20%)"/>
         <TextView
             android:id="@+id/stalCreditValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:fontFeatureSettings="tnum"
-            android:textColor="@color/app_text_accent_color"
+            android:textColor="@color/laya_primary"
             android:textSize="16sp"
             android:textStyle="bold"
-            tools:text="366 days" />
+            tools:text="366 days"/>
     </LinearLayout>
-
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/laya_summary_box"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:labelFor="@id/breakdownDeductionValue"
+            android:text="@string/deduction_applied_label"
+            android:textColor="@color/laya_text"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+        <TextView
+            android:id="@+id/breakdownDeductionValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:fontFeatureSettings="tnum"
+            android:textColor="@color/laya_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="0 days"/>
+    </LinearLayout>
     <TextView
         style="@style/BreakdownBalanceLabel"
         android:layout_marginTop="20dp"
         android:labelFor="@id/minimumSentenceValue"
-        android:text="@string/minimum_remaining_sentence" />
+        android:text="@string/minimum_remaining_sentence"/>
     <TextView
         android:id="@+id/minimumSentenceValue"
         style="@style/BreakdownBalanceValue"
-        tools:text="1y, 0m, 0d (365 days)" />
-
+        tools:text="1y, 0m, 0d (365 days)"
+        android:background="@drawable/breakdown_balance_background"
+        android:textColor="@color/breakdown_balance_text"
+        android:padding="10dp"/>
     <TextView
         style="@style/BreakdownBalanceLabel"
         android:layout_marginTop="16dp"
         android:labelFor="@id/maximumSentenceValue"
-        android:text="@string/maximum_remaining_sentence" />
+        android:text="@string/maximum_remaining_sentence"/>
     <TextView
         android:id="@+id/maximumSentenceValue"
         style="@style/BreakdownBalanceValue"
-        tools:text="3y, 0m, 0d (1095 days)" />
+        tools:text="3y, 0m, 0d (1095 days)"
+        android:background="@drawable/breakdown_balance_background"
+        android:textColor="@color/breakdown_balance_text"
+        android:padding="10dp"/>
 </LinearLayout>

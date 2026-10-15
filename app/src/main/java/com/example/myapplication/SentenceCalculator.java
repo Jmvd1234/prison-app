@@ -13,7 +13,9 @@ import java.util.Locale;
 
 /**
  * Mirrors the observed calculations at https://chr.layacalculator.org/.
- * Website compatibility is intentional: CPI disables GCTA/TASTM, but the website
+ * Direct-prison mode takes precedence over retained disqualification flags, matching
+ * the website UI which clears those flags. Outside that mode CPI disables GCTA/TASTM,
+ * but the website
  * still subtracts arrest-to-commitment days from its commitment-based dates.
  * Expected values are captured separately in the website regression fixtures.
  */
@@ -26,12 +28,18 @@ public final class SentenceCalculator {
 
     public static final class Input {
         public String observationDate, leaArrestDate, commitmentDate, convictionDate;
+        public String prisonTransferDate;
+        // Optional recorded jail stage before a CPI-disqualified prison commitment.
+        public String jailBeforePrisonDate;
+        // The form maps its prison date into the existing TA clock; previews cannot earn before it.
+        public boolean allowanceStartIsPrison;
         public int minYears, minMonths, minDays;
         public int maxYears, maxMonths, maxDays;
         public boolean notCommittedToJail, disqualifiedForCPI, disqualifiedForTimeAllowances;
         public int stalPercent;
         public long timeGapDays, deductionDays;
         public List<Penalty> charges;
+        public List<DeductionMonth> deductionMonths;
     }
 
     public static final class Penalty {
@@ -47,34 +55,50 @@ public final class SentenceCalculator {
         }
     }
 
-    /** Gross days and allowances for one recorded stage, before global adjustments. */
+    /** Gross credits and their net amounts after itemized monthly deductions, before global adjustments. */
     public static final class StageCredits {
         public final boolean recorded;
         public final long days, gctaDays, tastmDays;
+        public final long netGctaDays, netTastmDays;
 
         private StageCredits(boolean recorded, long days, long gctaDays, long tastmDays) {
+            this(recorded, days, gctaDays, tastmDays, 0, 0);
+        }
+
+        private StageCredits(boolean recorded, long days, long gctaDays, long tastmDays,
+                long gctaDeducted, long tastmDeducted) {
             this.recorded = recorded;
             this.days = days;
             this.gctaDays = gctaDays;
             this.tastmDays = tastmDays;
+            netGctaDays = gctaDays - gctaDeducted;
+            netTastmDays = tastmDays - tastmDeducted;
         }
     }
 
     /**
-     * The form records one commitment date, not a jail-to-prison transfer.
-     * Attribute its two intervals to LEA and the currently selected commitment type.
+     * Split recorded jail/prison stages without restarting the allowance clock.
      * An unrecorded stage is displayed as a dash rather than implying a known zero.
      */
     public static final class CustodyBreakdown {
         public final StageCredits lea, jail, prison, total;
 
         private CustodyBreakdown(State s) {
-            lea = new StageCredits(true, s.beforeCommitment, 0, 0);
-            StageCredits committed = new StageCredits(true, s.afterCommitment, s.gcta, s.tastm);
+            lea = new StageCredits(true, s.leaDays, 0, 0);
+            StageCredits committed = new StageCredits(true, s.afterCommitment, s.gcta, s.tastm,
+                    s.monthlyGctaDeducted, s.monthlyTastmDeducted);
             StageCredits unrecorded = new StageCredits(false, 0, 0, 0);
-            jail = s.prisonCommitment ? unrecorded : committed;
-            prison = s.prisonCommitment ? committed : unrecorded;
-            total = new StageCredits(true, s.beforeCommitment + s.afterCommitment, s.gcta, s.tastm);
+            jail = s.prisonCommitment ? (s.hasEarlierJail
+                    ? new StageCredits(true, s.jailDays, 0, 0) : unrecorded) : s.hasTransfer
+                    ? new StageCredits(true, s.jailDays, s.jailGcta, s.jailTastm,
+                            s.jailGctaDeducted, s.jailTastmDeducted) : committed;
+            prison = s.prisonCommitment ? committed : s.hasTransfer
+                    ? new StageCredits(true, s.afterCommitment - s.jailDays,
+                            s.gcta - s.jailGcta, s.tastm - s.jailTastm,
+                            s.monthlyGctaDeducted - s.jailGctaDeducted,
+                            s.monthlyTastmDeducted - s.jailTastmDeducted) : unrecorded;
+            total = new StageCredits(true, s.beforeCommitment + s.afterCommitment, s.gcta, s.tastm,
+                    s.monthlyGctaDeducted, s.monthlyTastmDeducted);
         }
     }
 
@@ -90,6 +114,7 @@ public final class SentenceCalculator {
         public final long gctaDays, tastmDays, stalDays;
         public final int stalPercent;
         public final long appliedDeductionDays, netAllowanceDays;
+        public final long monthlyGctaDeducted, monthlyTastmDeducted;
         public final long minSentenceDays, maxSentenceDays;
         public final int chargeCount;
         public final long minRemainingFifths, maxRemainingFifths, minRemainingDays, maxRemainingDays;
@@ -111,6 +136,8 @@ public final class SentenceCalculator {
             stalDays = s.stal;
             stalPercent = s.stalPercent;
             appliedDeductionDays = s.deductions;
+            monthlyGctaDeducted = s.monthlyGctaDeducted;
+            monthlyTastmDeducted = s.monthlyTastmDeducted;
             netAllowanceDays = s.netAllowance;
             minSentenceDays = s.minSentence;
             maxSentenceDays = s.maxSentence;
@@ -140,12 +167,15 @@ public final class SentenceCalculator {
     }
 
     private static final class State {
-        boolean available, excluded, prisonCommitment;
+        boolean available, excluded, prisonCommitment, hasTransfer, hasEarlierJail;
         String problem = "";
         LocalDate anchor;
         int chargeCount, stalPercent;
         long beforeCommitment, afterCommitment, months, eligible, gcta, tastm, stal;
+        long leaDays, jailDays, jailGcta, jailTastm;
         long deductions, netAllowance, minSentence, maxSentence, minRemaining, maxRemaining;
+        long monthlyGctaDeducted, monthlyTastmDeducted;
+        long jailGctaDeducted, jailTastmDeducted;
     }
 
     public static Result calculate(Input in) {
@@ -163,19 +193,30 @@ public final class SentenceCalculator {
             s.problem = "No calculation inputs supplied.";
             return new Result(s);
         }
-        s.excluded = in.disqualifiedForCPI || in.disqualifiedForTimeAllowances;
+        s.excluded = !in.notCommittedToJail && (in.disqualifiedForCPI || in.disqualifiedForTimeAllowances);
         s.prisonCommitment = usesPrisonCommitment(in.notCommittedToJail, in.disqualifiedForCPI);
         try {
             LocalDate observation = requiredDate(in.observationDate, "Observation date");
             LocalDate commitment = requiredDate(in.commitmentDate, "Commitment date");
+            LocalDate earlierJail = in.disqualifiedForCPI && !in.notCommittedToJail
+                    ? optionalDate(in.jailBeforePrisonDate, "Jail commitment date") : null;
             LocalDate arrest = optionalDate(in.leaArrestDate, "LEA arrest date");
-            if (arrest == null) arrest = commitment; // The website permits a blank LEA date.
-            LocalDate conviction = usesConvictionDate(in.disqualifiedForCPI,
+            if (arrest == null) arrest = earlierJail == null ? commitment : earlierJail;
+            if (earlierJail != null) {
+                require(!earlierJail.isBefore(arrest), "Jail commitment cannot precede arrest.");
+                validatePrisonTransfer(earlierJail, commitment, preview ? null : observation);
+                s.hasEarlierJail = true;
+            }
+            LocalDate conviction = usesConvictionDate(in.notCommittedToJail, in.disqualifiedForCPI,
                     in.disqualifiedForTimeAllowances)
                     ? optionalDate(in.convictionDate, "Date of conviction") : null;
             require(!commitment.isBefore(arrest), "Commitment cannot precede arrest.");
             require(!observation.isBefore(preview ? arrest : commitment), preview
                     ? "Preview cannot precede arrest." : "Current date cannot precede commitment.");
+            LocalDate transfer = s.prisonCommitment ? null
+                    : optionalDate(in.prisonTransferDate, "Prison commitment date");
+            validatePrisonTransfer(commitment, transfer, preview ? null : observation);
+            s.hasTransfer = transfer != null;
             require(in.timeGapDays >= 0 && in.deductionDays >= 0,
                     "Gap and deduction days must be non-negative.");
             require(in.stalPercent == 0 || in.stalPercent == 20 || in.stalPercent == 40,
@@ -185,6 +226,12 @@ public final class SentenceCalculator {
             boolean beforeCommitment = observation.isBefore(commitment);
             s.beforeCommitment = ChronoUnit.DAYS.between(arrest, beforeCommitment ? observation : commitment);
             s.afterCommitment = beforeCommitment ? 0 : ChronoUnit.DAYS.between(commitment, observation);
+            s.leaDays = s.beforeCommitment;
+            if (earlierJail != null) {
+                LocalDate jailEnd = beforeCommitment ? observation : commitment;
+                s.jailDays = jailEnd.isBefore(earlierJail) ? 0 : ChronoUnit.DAYS.between(earlierJail, jailEnd);
+                s.leaDays -= s.jailDays;
+            }
             s.months = wholeMonthsElapsed(commitment, observation);
             require(s.months <= 2400, "Check the custody dates: more than 200 years entered.");
             List<Penalty> charges = in.charges == null ? Collections.singletonList(new Penalty(
@@ -205,20 +252,38 @@ public final class SentenceCalculator {
             s.minSentence = combinedSentenceDays(commitment, charges, true);
             s.maxSentence = combinedSentenceDays(commitment, charges, false);
 
-            if (beforeCommitment || in.disqualifiedForCPI) {
-                s.eligible = 0;
-            } else if (in.disqualifiedForTimeAllowances) {
-                // The website restarts both the month count and the rate tiers at conviction.
-                s.eligible = conviction == null ? 0 : signedWholeMonths(conviction, observation);
-            } else {
-                s.eligible = s.months;
-            }
+            s.eligible = eligibleMonths(in, commitment, conviction, observation);
             require(Math.abs(s.eligible) <= 2400, "Check the conviction date.");
             s.gcta = gctaForMonths(s.eligible);
             s.tastm = Math.multiplyExact(s.eligible, 15L);
+            if (s.hasTransfer) {
+                LocalDate jailEnd = observation.isBefore(transfer) ? observation : transfer;
+                s.jailDays = jailEnd.isBefore(commitment) ? 0 : ChronoUnit.DAYS.between(commitment, jailEnd);
+                if (!observation.isAfter(transfer)) {
+                    s.jailGcta = s.gcta;
+                    s.jailTastm = s.tastm;
+                } else {
+                    // Credits earned through the transfer date belong to Jail. The remaining
+                    // cumulative credits belong to Prison; partial months and rate tiers carry on.
+                    // No earned jail credits are manufactured before the conviction clock starts.
+                    long jailMonths = Math.max(0, eligibleMonths(in, commitment, conviction, transfer));
+                    s.jailGcta = gctaForMonths(jailMonths);
+                    s.jailTastm = Math.multiplyExact(jailMonths, 15L);
+                }
+            }
             s.stalPercent = in.stalPercent;
             s.stal = loyaltyCreditDays(s.maxSentence, s.stalPercent);
             s.deductions = in.deductionDays;
+            if (in.deductionMonths != null && !in.deductionMonths.isEmpty()) {
+                DeductionMonth.Totals withheld = DeductionMonth.totals(in, observation);
+                s.monthlyGctaDeducted = withheld.appliedGcta;
+                s.monthlyTastmDeducted = withheld.appliedTastm;
+                s.jailGctaDeducted = withheld.appliedJailGcta;
+                s.jailTastmDeducted = withheld.appliedJailTastm;
+                // Like LAYA, itemized months replace the manual total. Unlike its fixed
+                // total, each selected period activates at its earned-credit anniversary.
+                s.deductions = withheld.applied();
+            }
             long grossAllowance = Math.addExact(Math.addExact(s.gcta, s.tastm), s.stal);
             s.netAllowance = Math.subtractExact(grossAllowance, s.deductions);
             long creditedDays = Math.addExact(Math.addExact(s.beforeCommitment,
@@ -237,6 +302,26 @@ public final class SentenceCalculator {
             s.problem = error.getMessage() == null ? "Check calculation inputs." : error.getMessage();
         }
         return new Result(s);
+    }
+
+    public static void validatePrisonTransfer(LocalDate commitment, LocalDate transfer, LocalDate latest) {
+        if (transfer == null) return;
+        require(transfer.isAfter(commitment), "Prison commitment must be after jail commitment.");
+        if (latest != null) require(!transfer.isAfter(latest), "Prison commitment cannot be after the current date.");
+    }
+
+    private static long eligibleMonths(Input in, LocalDate commitment, LocalDate conviction, LocalDate date) {
+        if (date.isBefore(commitment)) return 0;
+        // LAYA clears both exclusions in Not Committed to Jail mode. Retained app
+        // flags must not block prison credits or introduce a second allowance clock.
+        if (in.notCommittedToJail) return wholeMonthsElapsed(commitment, date);
+        if (in.disqualifiedForCPI) return 0;
+        // Preserve the website's conviction-based clock for TA-only disqualification.
+        if (in.disqualifiedForTimeAllowances) {
+            if (conviction == null || (in.allowanceStartIsPrison && date.isBefore(conviction))) return 0;
+            return signedWholeMonths(conviction, date);
+        }
+        return wholeMonthsElapsed(commitment, date);
     }
 
     private static long gctaForMonths(long months) {
@@ -270,8 +355,9 @@ public final class SentenceCalculator {
         return notCommittedToJail || disqualifiedForCPI;
     }
 
-    public static boolean usesConvictionDate(boolean disqualifiedForCPI, boolean disqualifiedForTimeAllowances) {
-        return disqualifiedForTimeAllowances && !disqualifiedForCPI;
+    public static boolean usesConvictionDate(boolean notCommittedToJail, boolean disqualifiedForCPI,
+            boolean disqualifiedForTimeAllowances) {
+        return !notCommittedToJail && disqualifiedForTimeAllowances && !disqualifiedForCPI;
     }
 
     public static LocalDate requiredDate(String value, String label) {
