@@ -1,0 +1,7 @@
+<resources>
+    <string name="timeline_tutorial_title">Explore the timeline</string>
+    <string name="timeline_tutorial_body">Drag the blue marker to change the observation date. Swipe left or right across the date labels to scroll the timeline. Pinch to zoom.</string>
+    <string name="timeline_tutorial_sample">Demo uses sample dates.</string>
+    <string name="timeline_tutorial_close">Close tutorial</string>
+    <string name="timeline_tutorial_got_it">Got It</string>
+</resources>

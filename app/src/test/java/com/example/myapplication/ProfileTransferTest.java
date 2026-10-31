@@ -126,6 +126,14 @@ public class ProfileTransferTest {
             java.util.concurrent.atomic.AtomicBoolean ready=new java.util.concurrent.atomic.AtomicBoolean();
             for(int i=0;i<200;i++){org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();scenario.onActivity(a->ready.set(a.findViewById(R.id.breakdownCard).getVisibility()==View.VISIBLE&&((com.google.android.material.slider.Slider)a.findViewById(R.id.breakdownDateSlider)).isEnabled()));if(ready.get())break;Thread.sleep(20);}
             assertTrue(ready.get());
+            scenario.onActivity(a->{
+                TimelineTutorialDialog tutorial=(TimelineTutorialDialog)a.getSupportFragmentManager().findFragmentByTag(TimelineTutorialDialog.TAG);
+                assertNotNull(tutorial);
+                assertNull(a.getSupportFragmentManager().findFragmentByTag(AddServiceChargeDialog.TAG));
+                tutorial.requireDialog().findViewById(R.id.timelineTutorialClose).performClick();
+                a.getSupportFragmentManager().executePendingTransactions();
+            });
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
             scenario.onActivity(a->{com.google.android.material.slider.Slider slider=a.findViewById(R.id.breakdownDateSlider);
                 assertTrue(slider.getValueTo()>java.time.temporal.ChronoUnit.DAYS.between(plan.start,plan.active().maximum));
                 AddServiceChargeDialog dialog=(AddServiceChargeDialog)a.getSupportFragmentManager().findFragmentByTag(AddServiceChargeDialog.TAG);assertNotNull(dialog);dialog.dismissNow();

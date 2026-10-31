@@ -46,7 +46,7 @@ public class BreakdownActivity extends AppCompatActivity {
     private DeductionDatesController deductions;
     private SentenceProjection.Range range;
     private SequentialSentencePlan servicePlan;
-    private boolean serviceSaving, autoPrompted, selectNewCharge, openingChargeChecked;
+    private boolean serviceSaving, autoPrompted, selectNewCharge, openingChargeChecked, tutorialChecked;
 
     private LocalDate selectedDate, projectionToday;
     private boolean followToday = true, bindingSlider;
@@ -95,6 +95,9 @@ public class BreakdownActivity extends AppCompatActivity {
                 selectedDate = LocalDate.ofEpochDay(savedInstanceState.getLong(STATE_DATE));
             }
         }
+        tutorialChecked=savedInstanceState!=null&&savedInstanceState.getBoolean("timeline_tutorial_checked");
+        getSupportFragmentManager().setFragmentResultListener(TimelineTutorialDialog.DISMISSED,this,
+                (key,result)->dateSlider.post(this::showOpeningDialogs));
         openingChargeChecked=savedInstanceState!=null&&savedInstanceState.getBoolean("service_opening_checked");
         autoPrompted=savedInstanceState!=null&&savedInstanceState.getBoolean("service_auto_prompted");
         findViewById(R.id.serviceAddCharge).setOnClickListener(v->showAddCharge());
@@ -224,16 +227,36 @@ public class BreakdownActivity extends AppCompatActivity {
                 LocalDate preview = selectNewCharge?selectionFloor():followToday ? today : selectedDate;
                 if(selectNewCharge){selectNewCharge=false;followToday=false;}
                 selectDate(preview != null && range.dates.contains(preview) ? preview : today);
-                if(!openingChargeChecked){
-                    openingChargeChecked=true;
-                    if(servicePlan!=null&&!today.isBefore(servicePlan.active().maximum)
-                            &&selectedDate.equals(servicePlan.active().maximum)&&servicePlan.hasNext(selectedDate)){
-                        autoPrompted=true;
-                        showAddCharge();
-                    }
-                }
+                showOpeningDialogs();
             });
         });
+    }
+
+    private void showOpeningDialogs() {
+        if(range==null||!dateSlider.isEnabled()||isFinishing()||isDestroyed()
+                ||getSupportFragmentManager().isStateSaved()
+                ||getSupportFragmentManager().findFragmentByTag(TimelineTutorialDialog.TAG)!=null)return;
+        if(!tutorialChecked){
+            tutorialChecked=true;
+            if(!TimelineTutorialDialog.acknowledged(this,currentUserID())){
+                TimelineTutorialDialog.create(currentUserID()).showNow(getSupportFragmentManager(),TimelineTutorialDialog.TAG);
+                return;
+            }
+        }
+        if(!openingChargeChecked){
+            openingChargeChecked=true;
+            LocalDate today=LocalDate.now();
+            if(servicePlan!=null&&!today.isBefore(servicePlan.active().maximum)
+                    &&selectedDate.equals(servicePlan.active().maximum)&&servicePlan.hasNext(selectedDate)){
+                autoPrompted=true;
+                showAddCharge();
+            }
+        }
+    }
+
+    @Override protected void onResumeFragments(){
+        super.onResumeFragments();
+        if(dateSlider!=null)dateSlider.post(this::showOpeningDialogs);
     }
 
     private void showObservationDatePicker() {
@@ -486,6 +509,7 @@ public class BreakdownActivity extends AppCompatActivity {
 
     @Override protected void onSaveInstanceState(Bundle outState) {
         if (deductions != null) deductions.saveState(outState);
+        outState.putBoolean("timeline_tutorial_checked",tutorialChecked);
         outState.putBoolean("service_auto_prompted",autoPrompted);
         outState.putBoolean("service_opening_checked",openingChargeChecked);
         outState.putFloat("timeline_zoom",zoomScroll.getZoom());
