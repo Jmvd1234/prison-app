@@ -32,8 +32,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
         LocalDate date, displayedDate;
         boolean minimum, maximum, reached, today;
         float fraction, labelFraction, x, labelAnchorX;
-        float markerOffset;
-        int left, top, lane;
+        int left, top, lane, customColor;
 
         boolean isZero() { return minimum || maximum; }
     }
@@ -45,10 +44,47 @@ public final class TimelineMilestonesLayout extends ViewGroup {
     private LocalDate selectedDate;
     private SentenceProjection.Range range;
     private Label minimumLabel, maximumLabel;
+    private boolean intermediateCharge;
+    private int chargeNumber=1;
+    private LocalDate overdueStart;
+    private Label limitLabel;
+    private int sliderTop;
+    public void setOverdueStart(LocalDate date){overdueStart=date;invalidate();}
+    public void setChargeContext(SequentialSentencePlan plan){
+        chargeNumber=plan==null?1:plan.active().number;
+        limitLabel=null;
+        if(plan==null)return;
+        limitLabel=new Label();limitLabel.date=limitLabel.displayedDate=plan.capDate;
+        limitLabel.fraction=limitLabel.labelFraction=range.positionOf(plan.capDate);
+        limitLabel.customColor=neutral;
+        limitLabel.view=(TextView)LayoutInflater.from(getContext()).inflate(R.layout.view_timeline_milestone,this,false);
+        limitLabel.view.setText(getContext().getString(R.string.service_cap)+"\n"+plan.capDate.format(SentenceCalculator.DISPLAY_DATE));
+        limitLabel.view.setTextColor(neutral);
+        limitLabel.view.setClickable(false);limitLabel.view.setFocusable(false);
+        for(int i=1;i<plan.stages.size();i++){
+            SequentialSentencePlan.Stage next=plan.stages.get(i);
+            Label label=new Label();label.date=label.displayedDate=next.start;label.reached=true;
+            label.fraction=label.labelFraction=range.positionOf(next.start);
+            label.customColor=ContextCompat.getColor(getContext(),next.previousMaximum?R.color.service_previous_maximum:R.color.service_previous_minimum);
+            label.view=(TextView)LayoutInflater.from(getContext()).inflate(R.layout.view_timeline_milestone,this,false);
+            label.view.setText(getContext().getString(next.previousCustom?R.string.service_custom_end:next.previousMaximum?R.string.service_maximum:R.string.service_minimum)+"\n"+next.start.format(SentenceCalculator.DISPLAY_DATE)+"\n"+getContext().getString(R.string.service_number,i));
+            label.view.setTextColor(label.customColor);label.view.setClickable(false);
+            labels.add(label);addView(label.view);
+        }
+        requestLayout();
+    }
+    public void setLimitRelevant(boolean visible){
+        if(limitLabel==null||visible==labels.contains(limitLabel))return;
+        if(visible){labels.add(limitLabel);addView(limitLabel.view);}
+        else{labels.remove(limitLabel);removeView(limitLabel.view);}
+        requestLayout();invalidate();
+    }
+    public void setIntermediateCharge(boolean value){intermediateCharge=value;}
+
 
     public TimelineMilestonesLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
-        neutral = ContextCompat.getColor(context, R.color.laya_primary);
+        neutral = ContextCompat.getColor(context, R.color.laya_label);
         surface = ContextCompat.getColor(context, R.color.laya_surface);
         minimumColor = ContextCompat.getColor(context, R.color.release_minimum_marker);
         maximumColor = ContextCompat.getColor(context, R.color.release_maximum_marker);
@@ -60,19 +96,13 @@ public final class TimelineMilestonesLayout extends ViewGroup {
         for (Label label : labels) removeView(label.view);
         labels.clear();
         minimumLabel = maximumLabel = null;
-        Map<LocalDate, List<SentenceProjection.Milestone>> grouped = new LinkedHashMap<>();
+        List<List<SentenceProjection.Milestone>> groups = new ArrayList<>();
+        // Keep coincident custody dates in separate bubbles as well.
         for (SentenceProjection.Milestone point : range.milestones) {
-            if (point.kind != SentenceProjection.Kind.MINIMUM_ZERO && point.kind != SentenceProjection.Kind.MAXIMUM_ZERO) {
-                grouped.computeIfAbsent(point.date, date -> new ArrayList<>()).add(point);
-            }
-        }
-        List<List<SentenceProjection.Milestone>> groups = new ArrayList<>(grouped.values());
-        // Two penalties can first cross zero on the same credit day while their earlier
-        // estimates differ. Give each release its own independently moving label.
-        for (SentenceProjection.Milestone point : range.milestones) {
-            if (point.kind == SentenceProjection.Kind.MINIMUM_ZERO || point.kind == SentenceProjection.Kind.MAXIMUM_ZERO) {
-                groups.add(Collections.singletonList(point));
-            }
+            boolean duplicate=false;
+            for(List<SentenceProjection.Milestone> group:groups)
+                if(group.get(0).kind==point.kind&&group.get(0).date.equals(point.date))duplicate=true;
+            if(!duplicate)groups.add(Collections.singletonList(point));
         }
         for (List<SentenceProjection.Milestone> group : groups) {
             Label label = new Label();
@@ -91,6 +121,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
                 title.setSpan(new ForegroundColorSpan(minimum ? minimumColor : maximum ? maximumColor : neutral),
                         start, title.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
+            if(label.date.isBefore(range.start))title.append(" ←");
             title.append('\n').append(label.date.format(SentenceCalculator.DISPLAY_DATE));
             label.fraction = label.labelFraction = range.positionOf(label.date);
             label.view = (TextView) LayoutInflater.from(getContext())
@@ -98,6 +129,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
             label.view.setText(title);
             label.view.setTag(label.date.toString());
             label.view.setOnClickListener(view -> listener.select(label.today ? LocalDate.now() : label.date));
+            if(label.date.isBefore(range.start)){label.view.setClickable(false);label.view.setFocusable(false);}
             if (label.minimum) {
                 minimumLabel = label;
                 label.view.setId(R.id.timelineMinimumReleaseLabel);
@@ -124,21 +156,20 @@ public final class TimelineMilestonesLayout extends ViewGroup {
 
     private void updateReleaseLabel(Label label, LocalDate estimate, boolean reached) {
         if (label == null || range == null) return;
+        label.view.setTextColor(markerColor(label));
         if (label.reached != reached) {
             label.reached = reached;
             requestLayout();
         }
-        int titleId = label.minimum
-                ? (reached ? R.string.breakdown_marker_minimum : R.string.breakdown_marker_minimum_estimate)
-                : (reached ? R.string.breakdown_marker_maximum : R.string.breakdown_marker_maximum_estimate);
-        String title = getContext().getString(titleId);
+        int titleId = label.minimum ? R.string.overview_minimum : R.string.overview_maximum;
+        String title = getContext().getString(intermediateCharge ? (label.minimum ? R.string.service_minimum : R.string.service_maximum) : titleId);
         String formattedDate = estimate.format(SentenceCalculator.DISPLAY_DATE);
         if (estimate.isAfter(range.end)) {
             formattedDate = getContext().getString(R.string.breakdown_marker_beyond_range, formattedDate);
         }
         SpannableStringBuilder text = new SpannableStringBuilder(title);
         text.setSpan(new ForegroundColorSpan(markerColor(label)), 0, title.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        text.append('\n').append(formattedDate);
+        text.append('\n').append(formattedDate).append('\n').append(getContext().getString(R.string.service_number,chargeNumber));
         if (!text.toString().contentEquals(label.view.getText())) label.view.setText(text);
         label.view.setContentDescription(getContext().getString(R.string.breakdown_release_marker_action,
                 title, formattedDate, label.date.format(SentenceCalculator.DISPLAY_DATE)));
@@ -151,6 +182,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
     }
 
     private int markerColor(Label label) {
+        if(label.customColor!=0)return label.customColor;
         return label.maximum ? maximumColor : label.minimum ? minimumColor : neutral;
     }
 
@@ -172,58 +204,57 @@ public final class TimelineMilestonesLayout extends ViewGroup {
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
         int side = slider.getTrackSidePadding();
         for (Label label : labels) {
-            label.markerOffset = 0;
             float fraction = getLayoutDirection() == LAYOUT_DIRECTION_RTL ? 1 - label.fraction : label.fraction;
             label.x = side + fraction * (width - 2 * side);
             float labelFraction = getLayoutDirection() == LAYOUT_DIRECTION_RTL ? 1 - label.labelFraction : label.labelFraction;
             label.labelAnchorX = side + labelFraction * (width - 2 * side);
-            label.view.measure(MeasureSpec.makeMeasureSpec(Math.min(dp(152), width), MeasureSpec.AT_MOST),
+            label.view.measure(MeasureSpec.makeMeasureSpec(Math.min(dp(120), width), MeasureSpec.AT_MOST),
                     MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
             label.left = Math.max(0, Math.min(width - label.view.getMeasuredWidth(),
                     Math.round(label.labelAnchorX - label.view.getMeasuredWidth() / 2f)));
         }
-        // Nearby min/max dates keep their exact horizontal stops, but stagger their
-        // larger circles vertically. A coincident date instead uses a two-color circle.
-        for (Label first : labels) for (Label second : labels) {
-            if (first != second && first.isZero() && second.isZero()
-                    && first.reached && second.reached
-                    && !first.date.equals(second.date)
-                    && Math.abs(first.x - second.x) < dp(28)) {
-                first.markerOffset = first.minimum ? -dp(12) : dp(12);
-            }
-        }
+        // Nearby markers retain their exact date positions on the same track.
         List<Label> positions = new ArrayList<>(labels);
         positions.sort(Comparator.comparingDouble(label -> label.labelAnchorX));
+        // Lanes alternate above/below; both sides always reserve one full label.
         List<Integer> laneRight = new ArrayList<>(), laneHeight = new ArrayList<>();
+        int reserved=dp(40);
+        for(Label label:labels)reserved=Math.max(reserved,label.view.getMeasuredHeight());
+        laneRight.add(-dp(8));laneRight.add(-dp(8));
+        laneHeight.add(reserved);laneHeight.add(reserved);
         for (Label label : positions) {
             int lane = 0;
             while (lane < laneRight.size() && label.left < laneRight.get(lane) + dp(8)) lane++;
-            if (lane == laneRight.size()) {
-                laneRight.add(0);
-                laneHeight.add(0);
-            }
+            if (lane == laneRight.size()) {laneRight.add(-dp(8));laneHeight.add(reserved);}
             label.lane = lane;
             laneRight.set(lane, label.left + label.view.getMeasuredWidth());
-            laneHeight.set(lane, Math.max(laneHeight.get(lane), label.view.getMeasuredHeight()));
         }
-        int height = slider.getMeasuredHeight() + dp(6);
-        for (int lane = 0; lane < laneHeight.size(); lane++) {
-            for (Label label : labels) if (label.lane == lane) label.top = height;
-            height += laneHeight.get(lane) + dp(4);
+        int above=dp(6),below=dp(6);
+        for(int lane=0;lane<laneHeight.size();lane++){
+            if(lane%2==0)above+=laneHeight.get(lane)+dp(4);
+            else below+=laneHeight.get(lane)+dp(4);
         }
+        sliderTop=above;
+        int upper=above-dp(6),lower=above+slider.getMeasuredHeight()+dp(6);
+        for(int lane=0;lane<laneHeight.size();lane++){
+            for(Label label:labels)if(label.lane==lane)
+                label.top=lane%2==0?upper-label.view.getMeasuredHeight():lower;
+            if(lane%2==0)upper-=laneHeight.get(lane)+dp(4);else lower+=laneHeight.get(lane)+dp(4);
+        }
+        int height=above+slider.getMeasuredHeight()+below;
         setMeasuredDimension(resolveSize(width, widthMeasureSpec), resolveSize(height, heightMeasureSpec));
     }
 
     @Override protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         View slider = getChildAt(0);
-        slider.layout(0, 0, right - left, slider.getMeasuredHeight());
+        slider.layout(0, sliderTop, right - left, sliderTop+slider.getMeasuredHeight());
         for (Label label : labels) label.view.layout(label.left, label.top,
                 label.left + label.view.getMeasuredWidth(), label.top + label.view.getMeasuredHeight());
     }
 
     @Override protected void dispatchDraw(Canvas canvas) {
         Slider slider = (Slider) getChildAt(0);
-        float trackY = slider.getHeight() / 2f;
+        float trackY = slider.getTop()+slider.getHeight() / 2f;
         paint.setStrokeWidth(dp(1));
         paint.setStyle(Paint.Style.STROKE);
         canvas.save();
@@ -237,18 +268,24 @@ public final class TimelineMilestonesLayout extends ViewGroup {
             float labelX = label.left + label.view.getWidth() / 2f;
             connector.reset();
             connector.moveTo(label.labelAnchorX, trackY);
-            connector.lineTo(label.labelAnchorX, slider.getBottom());
-            connector.lineTo(labelX, label.top);
+            boolean above=label.lane%2==0;
+            connector.lineTo(label.labelAnchorX, above?slider.getTop():slider.getBottom());
+            connector.lineTo(labelX, above?label.top+label.view.getHeight():label.top);
             canvas.drawPath(connector, paint);
         }
         canvas.restore();
         super.dispatchDraw(canvas);
+        if(overdueStart!=null&&selectedDate!=null&&selectedDate.isAfter(overdueStart)){
+            float a=slider.getTrackSidePadding()+range.positionOf(overdueStart)*slider.getTrackWidth();
+            float b=slider.getTrackSidePadding()+range.positionOf(selectedDate)*slider.getTrackWidth()-slider.getThumbWidth()/2f-slider.getThumbTrackGapSize();
+            if(b>a){paint.setStyle(Paint.Style.FILL);paint.setColor(ContextCompat.getColor(getContext(),R.color.laya_danger));canvas.drawRect(a,trackY-slider.getTrackHeight()/2f,b,trackY+slider.getTrackHeight()/2f,paint);}
+        }
         paint.setStyle(Paint.Style.FILL);
         for (Label label : labels) {
             if (!label.isZero()) {
                 paint.setColor(surface);
                 canvas.drawCircle(label.x, trackY, dp(5), paint);
-                paint.setColor(neutral);
+                paint.setColor(markerColor(label));
                 canvas.drawCircle(label.x, trackY, dp(3), paint);
                 continue;
             }
@@ -257,7 +294,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
                     && minimumLabel.reached && maximumLabel.reached
                     && minimumLabel.date.equals(maximumLabel.date);
             if (sharedZero && label.maximum) continue;
-            float y = trackY + label.markerOffset;
+            float y = trackY;
             int radius = dp(label.date.equals(selectedDate) ? 10 : 8);
             paint.setColor(markerColor(label));
             canvas.drawLine(label.x, trackY, label.x, y, paint);
@@ -287,9 +324,6 @@ public final class TimelineMilestonesLayout extends ViewGroup {
             if (sharedEstimate && label.maximum) continue;
             float x = label.labelAnchorX;
             float y = trackY - dp(14);
-            if (!sharedEstimate && label.maximum && minimumLabel != null
-                    && !minimumLabel.reached
-                    && Math.abs(minimumLabel.labelAnchorX - x) < dp(16)) y = trackY + dp(14);
             int radius = dp(5);
             paint.setStrokeWidth(dp(1));
             paint.setColor(markerColor(label));

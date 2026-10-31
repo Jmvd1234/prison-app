@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Private release signing material and generated packages
+/keystore.properties
+/.signing/
+*.jks
+*.keystore
+*.p12
+/app/release/

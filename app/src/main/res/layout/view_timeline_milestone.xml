@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Labels remain editable TextViews. Release labels move with earned-credit estimates;
-     tapping one selects its fixed zero date. Custody labels select the recorded date. -->
-<TextView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:minHeight="48dp"
-    android:paddingHorizontal="6dp"
-    android:paddingVertical="6dp"
-    android:gravity="center"
-    android:textColor="@color/laya_primary"
-    android:textSize="11sp"
-    android:textStyle="bold"
-    android:background="?attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true"/>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:paddingHorizontal="4dp" android:paddingVertical="2dp"
+    android:includeFontPadding="false" android:textSize="10sp"
+    android:textColor="@color/laya_label"
+    android:background="@drawable/timeline_label_bubble"
+    android:clickable="true" android:focusable="true"
+    android:importantForAccessibility="yes"/>

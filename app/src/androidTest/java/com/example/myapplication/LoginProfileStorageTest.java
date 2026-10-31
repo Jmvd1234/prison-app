@@ -171,16 +171,17 @@ public class LoginProfileStorageTest {
                 old.execSQL("INSERT INTO ProfileCharge VALUES (20,0,1,2,3,4,5,6)");
                 old.setVersion(6);
             }
-            upgraded = Room.databaseBuilder(context,AppDatabase.class,name).addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10).build();
+            upgraded = Room.databaseBuilder(context,AppDatabase.class,name).addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10, AppDatabase.MIGRATION_10_11).build();
             User user = upgraded.UserDao().getUserByID(10);
             assertEquals("secret",user.password);assertFalse(user.isGuest);assertNull(user.passwordHash);
             Profile entry = upgraded.ProfileDao().getProfileByProfileID(20);
+            assertEquals("",entry.serviceChoices);assertTrue(entry.maximumTotalServiceDays>0);
             assertEquals(10,entry.userID);assertEquals(12,entry.deductionDays);
             assertEquals("profile_photos/keep.jpg",entry.image_path);
             assertEquals(1,entry.charges.size());assertEquals(4,entry.charges.get(0).maxYears);
             int guestID = new LoginProfileRepository(upgraded).load().get(0).userID;
             upgraded.close();
-            upgraded = Room.databaseBuilder(context,AppDatabase.class,name).addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10).build();
+            upgraded = Room.databaseBuilder(context,AppDatabase.class,name).addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10, AppDatabase.MIGRATION_10_11).build();
             assertEquals(guestID,new LoginProfileRepository(upgraded).load().get(0).userID);
             assertEquals(2,upgraded.UserDao().getAllUsers().size());
         } finally {if(upgraded!=null)upgraded.close();context.deleteDatabase(name);}

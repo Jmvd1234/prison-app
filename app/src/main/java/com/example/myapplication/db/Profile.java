@@ -45,6 +45,12 @@ public class Profile {
     @Ignore public List<ProfileCharge> charges = new ArrayList<>();
     @Ignore public List<com.example.myapplication.DeductionMonth> deductionMonths = new ArrayList<>();
 
+    // Sequential simulation decisions; an empty route starts with the most severe charge.
+    @androidx.room.ColumnInfo(defaultValue = "''")
+    public String serviceChoices = "";
+    @androidx.room.ColumnInfo(defaultValue = "0")
+    public long maximumTotalServiceDays;
+
     public boolean notCommittedToJail;
     public boolean disqualifiedForCPI;
     public boolean disqualifiedForTimeAllowances;

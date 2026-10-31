@@ -150,6 +150,37 @@ public final class SentenceCalculator {
             custodyBreakdown = s.available ? new CustodyBreakdown(s) : null;
         }
 
+        public Result withBalances(long minimum,long maximum,long minimumTerm,long maximumTerm,int count) {
+            return new Result(this,minimum,maximum,minimumTerm,maximumTerm,count);
+        }
+        private Result(Result source,long minimum,long maximum,long minimumTerm,long maximumTerm,int count) {
+            available = source.available;
+            problem = source.problem;
+            effectiveTADisqualification = source.effectiveTADisqualification;
+            sentenceAnchor = source.sentenceAnchor;
+            actualPreventiveDays = source.actualPreventiveDays;
+            actualServiceDays = source.actualServiceDays;
+            creditedPreventiveFifths = source.creditedPreventiveFifths;
+            completedImprisonmentMonths = source.completedImprisonmentMonths;
+            eligibleMonths = source.eligibleMonths;
+            gctaDays = source.gctaDays;
+            tastmDays = source.tastmDays;
+            stalDays = source.stalDays;
+            stalPercent = source.stalPercent;
+            appliedDeductionDays = source.appliedDeductionDays;
+            monthlyGctaDeducted = source.monthlyGctaDeducted;
+            monthlyTastmDeducted = source.monthlyTastmDeducted;
+            netAllowanceDays = source.netAllowanceDays;
+            minSentenceDays = minimumTerm;
+            maxSentenceDays = maximumTerm;
+            chargeCount = count;
+            minRemainingDays = minimum;
+            maxRemainingDays = maximum;
+            minRemainingFifths = Math.multiplyExact(minimum,5L);
+            maxRemainingFifths = Math.multiplyExact(maximum,5L);
+            custodyBreakdown = source.custodyBreakdown;
+        }
+
         public String minimumText(LocalDate observation) {
             return available ? displayBalance(observation, minRemainingDays) : "N/A";
         }
@@ -391,7 +422,7 @@ public final class SentenceCalculator {
         return end.isBefore(start) ? -wholeMonthsElapsed(end, start) : wholeMonthsElapsed(start, end);
     }
 
-    private static long sentenceDays(LocalDate anchor, int years, int months, int days) {
+    public static long sentenceDays(LocalDate anchor, int years, int months, int days) {
         require(years >= 0 && months >= 0 && days >= 0, "Penalty components cannot be negative.");
         require(years != 0 || months != 0 || days != 0, "Enter a non-zero penalty period.");
         // Add years and months together, matching the website's calendar-date arithmetic.

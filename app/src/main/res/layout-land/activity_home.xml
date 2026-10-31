@@ -8,9 +8,10 @@
     android:layout_height="match_parent"
     android:background="@color/laya_background"
     tools:context=".HomeActivity">
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -25,9 +26,11 @@
             android:textColor="@color/laya_text"
             android:background="@drawable/login_title"
             android:paddingHorizontal="10dp"
-            android:paddingVertical="5dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:paddingVertical="5dp" />
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
         <ImageButton
             android:id="@+id/homeBackButton"
             android:layout_width="30dp"
@@ -38,44 +41,18 @@
             android:src="@drawable/outline_arrow_back_24"
             app:tint="@color/laya_primary"
             android:elevation="0dp"
-            android:stateListAnimator="@null"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:paddingVertical="4dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/laya_text"
-                android:textStyle="bold"
-                android:text="HOME"
-                android:textSize="24sp" />
-            <TextView
-                android:id="@+id/homeLoginProfileName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
-                android:textColor="@color/laya_label"
-                android:textSize="14sp"
-                android:visibility="gone" />
-        </LinearLayout>
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:stateListAnimator="@null" />
+    </LinearLayout>
     <androidx.core.widget.NestedScrollView
         android:id="@+id/homeScroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        android:clipToPadding="false"
+        android:clipToPadding="true"
+        android:focusableInTouchMode="true"
         android:paddingHorizontal="12dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
         app:layout_constraintTop_toBottomOf="@id/homeTopBar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -86,113 +63,131 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                app:layout_constraintWidth_max="1000dp"
+                android:gravity="top|center_horizontal"
+                android:orientation="vertical"
+                android:layout_marginTop="12dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintVertical_bias="0"
+                app:layout_constraintWidth_max="640dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/laya_text"
+                    android:textStyle="bold"
+                    android:text="HOME"
+                    android:textSize="24sp" />
+                <TextView
+                    android:id="@+id/homeLoginProfileName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/laya_label"
+                    android:textSize="16sp"
+                    android:visibility="gone" />
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_weight="1">
-                    <TextView
-                        android:layout_width="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginHorizontal="0dp"
+                    android:layout_marginTop="12dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/laya_text"
-                        android:textStyle="bold"
-                        android:text="Dashboard"
-                        android:textSize="20sp"
-                        android:layout_marginTop="5dp" />
-                    <ImageButton
-                        android:id="@+id/dashboardButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="180dp"
-                        android:background="@drawable/button_background"
-                        app:tint="@color/laya_white"
-                        android:backgroundTint="@null"
-                        android:onClick="open_dashboard"
-                        android:src="@drawable/outline_account_circle_24"
-                        android:elevation="0dp"
-                        android:stateListAnimator="@null" />
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="5dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/laya_text"
+                            android:textStyle="bold"
+                            android:text="@string/home_dashboard"
+                            android:onClick="open_dashboard"
+                            android:textSize="22sp"
+                            android:layout_marginTop="5dp" />
+                        <com.example.myapplication.HomeActionButton
+                            android:id="@+id/dashboardButton"
+                        android:contentDescription="@string/home_dashboard"
+                            android:layout_width="match_parent"
+                            android:layout_height="240dp"
+                            android:background="@drawable/button_background"
+                            app:tint="@color/laya_white"
+                            android:backgroundTint="@null"
+                            android:onClick="open_dashboard"
+                            android:src="@drawable/outline_account_circle_24"
+                            android:elevation="0dp"
+                            android:stateListAnimator="@null" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:layout_weight="1"
+                        android:layout_marginStart="5dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/laya_text"
+                            android:textStyle="bold"
+                            android:text="@string/home_new_entry"
+                            android:onClick="make_new_entry"
+                            android:textSize="22sp"
+                            android:layout_marginTop="5dp" />
+                        <com.example.myapplication.HomeActionButton
+                            android:id="@+id/newEntryButton"
+                        android:contentDescription="@string/home_new_entry"
+                            android:layout_width="match_parent"
+                            android:layout_height="240dp"
+                            android:background="@drawable/button_background"
+                            app:tint="@color/laya_white"
+                            android:backgroundTint="@null"
+                            android:onClick="make_new_entry"
+                            android:src="@drawable/outline_add_2_24"
+                            android:elevation="0dp"
+                            android:stateListAnimator="@null" />
+                    </LinearLayout>
                 </LinearLayout>
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="2"
+                    android:layout_marginTop="12dp"
                     android:orientation="vertical"
-                    android:gravity="center"
-                    android:layout_marginHorizontal="12dp">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/laya_text"
-                        android:textStyle="bold"
-                        android:text="About"
-                        android:textSize="20sp"
-                        android:layout_marginTop="4dp" />
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/laya_text"
-                        android:text="@string/lorem_ipsum"
-                        android:textSize="15sp"
-                        android:background="@drawable/laya_card"
-                        android:paddingLeft="26dp"
-                        android:paddingTop="18dp"
-                        android:paddingRight="26dp"
-                        android:paddingBottom="24dp" />
+                    android:background="@drawable/laya_card"
+                    android:paddingLeft="28dp"
+                    android:paddingRight="28dp"
+                    android:paddingTop="13dp"
+                    android:paddingBottom="19dp">
                     <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/contactHelpButton"
+                        android:id="@+id/homeAboutToggle"
                         android:layout_width="match_parent"
-                        android:layout_height="64dp"
-                        android:layout_marginTop="10dp"
-                        android:background="@drawable/button_background"
-                        android:textColor="@color/laya_white"
-                        android:onClick="contact_help"
-                        android:text="CONTACT HELP"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:backgroundTint="@null"
-                        app:backgroundTint="@null"
-                        android:elevation="0dp"
-                        android:stateListAnimator="@null"
-                        android:minHeight="64dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:paddingLeft="28dp"
-                        android:paddingTop="14dp"
-                        android:paddingRight="28dp"
-                        android:paddingBottom="22dp" />
-                </LinearLayout>
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:layout_weight="1">
-                    <TextView
-                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/laya_text"
-                        android:textStyle="bold"
-                        android:text="New Entry"
-                        android:textSize="20sp"
-                        android:layout_marginTop="5dp" />
-                    <ImageButton
-                        android:id="@+id/newEntryButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="180dp"
-                        android:background="@drawable/button_background"
-                        app:tint="@color/laya_white"
-                        android:backgroundTint="@null"
-                        android:onClick="make_new_entry"
-                        android:src="@drawable/outline_add_2_24"
+                        android:minHeight="48dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:gravity="center_vertical|start"
+                        android:background="?attr/selectableItemBackground"
+                        android:text="@string/home_about_show"
+                        android:textAllCaps="false"
+                        android:textColor="@color/laya_muted"
+                        android:textSize="16sp"
                         android:elevation="0dp"
-                        android:stateListAnimator="@null" />
+                        android:stateListAnimator="@null"/>
+                    <TextView
+                        android:id="@+id/homeAboutDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="12dp"
+                        android:text="@string/home_about"
+                        android:textColor="@color/laya_text"
+                        android:textSize="15sp"
+                        android:visibility="gone"/>
                 </LinearLayout>
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>

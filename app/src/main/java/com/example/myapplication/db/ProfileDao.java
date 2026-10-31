@@ -50,6 +50,7 @@ public abstract class ProfileDao {
     @Transaction
     public long insertProfile(Profile profile) {
         List<ProfileCharge> charges = snapshot(profile);
+        refreshServiceLimit(profile);
         long id = insertProfileRow(profile);
         insertChargeRows(forOwner(charges, Math.toIntExact(id)));
         return id;
@@ -58,6 +59,11 @@ public abstract class ProfileDao {
     @Transaction
     public void updateUser(Profile profile) {
         List<ProfileCharge> charges = snapshot(profile);
+        Profile previous=getProfileByProfileID(profile.profileID);
+        if(previous!=null && !com.example.myapplication.SequentialSentencePlan.signature(previous).equals(
+                com.example.myapplication.SequentialSentencePlan.signature(profile))) profile.serviceChoices="";
+        else if(previous!=null) profile.serviceChoices=previous.serviceChoices;
+        refreshServiceLimit(profile);
         if (updateProfileRow(profile) != 1) throw new IllegalStateException("Profile no longer exists.");
         deleteChargeRows(profile.profileID);
         insertChargeRows(forOwner(charges, profile.profileID));
@@ -73,7 +79,84 @@ public abstract class ProfileDao {
     @Transaction
     public Profile getProfileByProfileID(int profileID) {
         ProfileWithCharges row = loadProfile(profileID);
-        return row == null ? null : row.toProfile();
+        if(row==null)return null;
+        Profile profile=row.toProfile();
+        long stored=profile.maximumTotalServiceDays;
+        refreshServiceLimit(profile);
+        if(stored!=profile.maximumTotalServiceDays) updateServiceLimit(profile.profileID,profile.maximumTotalServiceDays);
+        return profile;
+    }
+
+    @Query("UPDATE Profile SET maximumTotalServiceDays = :days WHERE profileID = :id")
+    protected abstract void updateServiceLimit(int id,long days);
+
+    @Query("UPDATE Profile SET serviceChoices = :choices WHERE profileID = :id")
+    protected abstract void updateServiceChoices(int id,String choices);
+
+    @Transaction
+    public Profile advanceService(int id,long owner,String expectedChoices,boolean nextMaximum,boolean fromMaximum) {
+        Profile profile=getProfileByProfileID(id);
+        if(profile==null||profile.userID!=owner)throw new IllegalStateException("Profile no longer available.");
+        String choices=profile.serviceChoices==null?"":profile.serviceChoices;
+        if(!choices.equals(expectedChoices))throw new IllegalStateException("Charge choices changed. Please reopen the timeline.");
+        com.example.myapplication.SequentialSentencePlan plan=new com.example.myapplication.SequentialSentencePlan(profile);
+        updateServiceChoices(id,plan.appendChoice(nextMaximum,fromMaximum));
+        return getProfileByProfileID(id);
+    }
+
+    @Transaction
+    public Profile advanceService(int id,long owner,String expectedChoices,boolean fromMaximum,java.time.LocalDate observation) {
+        Profile profile=getProfileByProfileID(id);
+        if(profile==null||profile.userID!=owner)throw new IllegalStateException("Profile no longer available.");
+        String choices=profile.serviceChoices==null?"":profile.serviceChoices;
+        if(!choices.equals(expectedChoices))throw new IllegalStateException("Charge choices changed. Please reopen the timeline.");
+        com.example.myapplication.SequentialSentencePlan plan=new com.example.myapplication.SequentialSentencePlan(profile);
+        updateServiceChoices(id,plan.appendChoice(fromMaximum,observation));
+        return getProfileByProfileID(id);
+    }
+
+    @Transaction
+    public Profile advanceServiceCustom(int id,long owner,String expectedChoices,java.time.LocalDate date,java.time.LocalDate observation) {
+        Profile profile=getProfileByProfileID(id);
+        if(profile==null||profile.userID!=owner)throw new IllegalStateException("Profile no longer available.");
+        if(!java.util.Objects.equals(profile.serviceChoices==null?"":profile.serviceChoices,expectedChoices))
+            throw new IllegalStateException("Charge choices changed. Please reopen the timeline.");
+        com.example.myapplication.SequentialSentencePlan plan=new com.example.myapplication.SequentialSentencePlan(profile);
+        updateServiceChoices(id,plan.appendCustomDate(date,observation));
+        return getProfileByProfileID(id);
+    }
+
+    /** Restore copies with fresh IDs, charges and deductions in one transaction. */
+    @Transaction
+    public void importProfiles(List<Profile> profiles,long owner) {
+        for(Profile profile:profiles) {
+            profile.profileID=0;profile.userID=owner;
+            int id=Math.toIntExact(insertProfile(profile));
+            List<ProfileDeduction> rows=new ArrayList<>();
+            for(com.example.myapplication.DeductionMonth month:profile.deductionMonths)rows.add(ProfileDeduction.from(id,month));
+            insertDeductionRows(rows);
+        }
+    }
+
+    /** Undo simulation handoffs; the profile's entered charges are retained. */
+    @Transaction
+    public Profile removeServiceFrom(int id,long owner,String expectedChoices,int chargeNumber) {
+        Profile profile=getProfileByProfileID(id);
+        if(profile==null||profile.userID!=owner)throw new IllegalStateException("Profile no longer available.");
+        String choices=profile.serviceChoices==null?"":profile.serviceChoices;
+        if(!choices.equals(expectedChoices))throw new IllegalStateException("Charge choices changed. Please reopen the timeline.");
+        com.example.myapplication.SequentialSentencePlan plan=new com.example.myapplication.SequentialSentencePlan(profile);
+        if(chargeNumber<2||chargeNumber>plan.stages.size())
+            throw new IllegalArgumentException("Choose an added charge to remove.");
+        updateServiceChoices(id,plan.choicesBefore(chargeNumber));
+        return getProfileByProfileID(id);
+    }
+
+    private static void refreshServiceLimit(Profile profile) {
+        try { profile.maximumTotalServiceDays=com.example.myapplication.SequentialSentencePlan.maximumServiceDays(profile); }
+        catch(IllegalArgumentException | java.time.DateTimeException | ArithmeticException invalidDraft) {
+            profile.maximumTotalServiceDays=0; // Legacy incomplete entries are still editable.
+        }
     }
 
     @Delete public abstract void deleteUser(Profile profile);

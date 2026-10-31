@@ -3,6 +3,10 @@ package com.example.myapplication;
 public class profileModel {
 
     private int profileID;
+    private int serviceChargeNumber;
+    public void setServiceChargeNumber(int number){serviceChargeNumber=number;}
+    public int getServiceChargeNumber(){return serviceChargeNumber;}
+
 
     private String firstName;
     private String lastName;

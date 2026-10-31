@@ -22,6 +22,10 @@ public class Profile_RecyclerViewAdapter
     interface OnDeleteEntryListener { void onDeleteEntry(profileModel profile); }
     private final OnDeleteEntryListener deleteEntryListener;
 
+    interface ExportSelection { boolean selecting(); boolean selected(int id); void toggle(int id,boolean selected); }
+    private ExportSelection exportSelection;
+    void setExportSelection(ExportSelection value){exportSelection=value;}
+
     Context context;
     ArrayList<profileModel> profileModels;
 
@@ -71,6 +75,15 @@ public class Profile_RecyclerViewAdapter
 
 
 
+        boolean selecting=exportSelection!=null&&exportSelection.selecting();
+        boolean selected=selecting&&exportSelection.selected(profile.getProfileID());
+        holder.itemView.findViewById(R.id.profileCardFace).setAlpha(selecting&&!selected?0.5f:1f);
+        android.widget.CheckBox checkbox=holder.itemView.findViewById(R.id.exportProfileCheck);
+        checkbox.setOnCheckedChangeListener(null);checkbox.setVisibility(selecting?View.VISIBLE:View.GONE);
+        checkbox.setChecked(selected);checkbox.setContentDescription(context.getString(R.string.select_export_profile,profile.getFirstName(),profile.getLastName()));
+        checkbox.setOnCheckedChangeListener((button,checked)->{if(exportSelection!=null)exportSelection.toggle(profile.getProfileID(),checked);});
+        holder.itemView.setOnClickListener(selecting?v->checkbox.setChecked(!checkbox.isChecked()):null);
+        holder.editEntry.setEnabled(!selecting);holder.expandBreakdown.setEnabled(!selecting);
         //profile details
         ProfilePhotoLoader.show(holder.imageView, profile.getImagePath(), R.drawable.profile_placeholder);
         holder.imageView.setContentDescription(context.getString(R.string.profile_photo_description,
@@ -108,13 +121,13 @@ public class Profile_RecyclerViewAdapter
 
 
         holder.minTime.setText(
-                "Minimum estimated balance:\n"
+                (profile.getServiceChargeNumber()>0?"Charge #"+profile.getServiceChargeNumber()+" · Minimum balance:\n":"Minimum estimated balance:\n")
                         + profile.getMinTimeRemaining()
                         + minRaw
         );
 
         holder.maxTime.setText(
-                "Maximum estimated balance:\n"
+                (profile.getServiceChargeNumber()>0?"Charge #"+profile.getServiceChargeNumber()+" · Maximum balance:\n":"Maximum estimated balance:\n")
                         + profile.getMaxTimeRemaining()
                         + maxRaw
         );
@@ -127,7 +140,7 @@ public class Profile_RecyclerViewAdapter
 
 
 
-        holder.deleteEntry.setVisibility(deleteEntryListener == null ? View.GONE : View.VISIBLE);
+        holder.deleteEntry.setVisibility(selecting||deleteEntryListener == null ? View.GONE : View.VISIBLE);
         holder.deleteEntry.setContentDescription(context.getString(
                 R.string.delete_profile_entry, profile.getFirstName(), profile.getLastName()));
         holder.deleteEntry.setOnClickListener(v -> {

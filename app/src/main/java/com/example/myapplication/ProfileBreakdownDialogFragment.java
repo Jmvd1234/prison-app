@@ -45,6 +45,14 @@ public class ProfileBreakdownDialogFragment extends DialogFragment {
         BreakdownViewBinder.bind(content, requireArguments());
         content.findViewById(R.id.closeBreakdownButton).setOnClickListener(v -> dismiss());
 
+        View details=content.findViewById(R.id.openDetailedBreakdown);
+        int id=requireArguments().getInt(BreakdownActivity.EXTRA_PROFILE_ID,-1);
+        details.setVisibility(id>0?View.VISIBLE:View.GONE);
+        details.setOnClickListener(v->{
+            startActivity(new android.content.Intent(requireContext(),BreakdownActivity.class)
+                    .putExtra(BreakdownActivity.EXTRA_PROFILE_ID,id));
+            dismiss();
+        });
         return builder.setView(content).create();
     }
 

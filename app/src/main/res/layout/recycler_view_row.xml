@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
     <FrameLayout
+        android:id="@+id/profileCardFace"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="0dp"
@@ -78,6 +79,10 @@
                             android:textColor="@color/laya_text"
                             android:textStyle="bold"/>
                     </LinearLayout>
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/exportProfileCheck"
+                        android:layout_width="48dp" android:layout_height="48dp"
+                        android:visibility="gone"/>
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/deleteProfileEntryButton"
                         android:layout_width="48dp"

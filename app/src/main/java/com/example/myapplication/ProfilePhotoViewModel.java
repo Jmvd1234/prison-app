@@ -89,7 +89,7 @@ public final class ProfilePhotoViewModel extends AndroidViewModel {
         ProfilePhotoStore.IO.execute(() -> {
             try {
                 ProfileDao dao = AppDatabase.getInstance(getApplication()).ProfileDao();
-                if (insert) dao.insertProfile(profile);
+                if (insert) profile.profileID=Math.toIntExact(dao.insertProfile(profile));
                 else dao.updateUser(profile);
             } catch (RuntimeException failure) {
                 main.post(() -> {
@@ -99,10 +99,12 @@ public final class ProfilePhotoViewModel extends AndroidViewModel {
                 });
                 return;
             }
+            Bundle completed=result==null?new Bundle():new Bundle(result);
+            completed.putInt(BreakdownActivity.EXTRA_PROFILE_ID,profile.profileID);
             if (!Objects.equals(oldPath, current.path)) discard(oldPath);
             main.post(() -> {
                 savedPath = current.path;
-                if (!cleared) completion.setValue(result == null ? new Bundle() : result);
+                if (!cleared) completion.setValue(completed);
             });
         });
     }

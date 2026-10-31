@@ -7,7 +7,6 @@
     <string name="login_no_password">No password</string>
     <string name="login_password_protected">Password required</string>
     <string name="login_unnamed">Unnamed profile</string>
-    <string name="login_empty_hint">Create a profile to keep your entries separate.</string>
     <string name="login_create_button">+ Create profile</string>
     <string name="login_create_title">Create profile</string>
     <string name="login_unlock_title">Unlock %1$s</string>
@@ -23,7 +22,7 @@
     <string name="login_require_password">Require password</string>
     <string name="login_created">Profile created</string>
     <string name="login_switch_profile">Switch profile</string>
-    <string name="login_local_note">Profiles and entries are saved on this device, including Guest entries.</string>
+    <string name="login_local_note">All data remains on this device and is saved locally. Laya does not collect any data and works offline. Your data is not uploaded to the internet. </string>
     <string name="login_name_required">Enter a username.</string>
     <string name="login_name_too_long">Use 40 characters or fewer for the username.</string>
     <string name="login_guest_name_reserved">Guest is the built-in profile. Choose another username.</string>
@@ -59,4 +58,5 @@
         <item name="android:singleLine">true</item>
         <item name="android:textSize">16sp</item>
     </style>
+    <string name="login_attribution">Created by Dr. Ian Niccolo Tobia and Julian Dizon</string>
 </resources>

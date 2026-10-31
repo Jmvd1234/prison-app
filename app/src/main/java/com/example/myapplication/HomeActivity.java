@@ -19,6 +19,8 @@ public class HomeActivity extends AppCompatActivity {
     public static final String EXTRA_LOGIN_NAME = "login_profile_name";
 
     ImageButton homeBackButton;
+    private boolean aboutExpanded;
+    private String aboutPreferenceKey;
 
     private final ActivityResultLauncher<Intent> newEntryLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -46,6 +48,24 @@ public class HomeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        long owner = getSharedPreferences("user_session", MODE_PRIVATE)
+                .getLong("currentUserID", -1L);
+        aboutPreferenceKey = "about_expanded_" + owner;
+        aboutExpanded = getSharedPreferences("home_preferences", MODE_PRIVATE)
+                .getBoolean(aboutPreferenceKey, true);
+        renderAbout();
+        findViewById(R.id.homeAboutToggle).setOnClickListener(v -> {
+            androidx.core.widget.NestedScrollView scroll = findViewById(R.id.homeScroll);
+            int previousScrollY = scroll.getScrollY();
+            aboutExpanded = !aboutExpanded;
+            getSharedPreferences("home_preferences", MODE_PRIVATE).edit()
+                    .putBoolean(aboutPreferenceKey, aboutExpanded).apply();
+            // Keep the viewport still when the focused toggle's card changes height.
+            // On collapse, ScrollView clamps this to the remaining content naturally.
+            androidx.core.view.OneShotPreDrawListener.add(scroll,
+                    () -> scroll.scrollTo(0, previousScrollY));
+            renderAbout();
+        });
         homeBackButton = findViewById(R.id.homeBackButton);
         homeBackButton.setContentDescription(getString(R.string.login_switch_profile));
         homeBackButton.setOnClickListener(this::logOut);
@@ -61,6 +81,14 @@ public class HomeActivity extends AppCompatActivity {
 
     }
 
+    private void renderAbout(){
+        findViewById(R.id.homeAboutDescription).setVisibility(aboutExpanded?View.VISIBLE:View.GONE);
+        TextView toggle=findViewById(R.id.homeAboutToggle);
+        toggle.setText(aboutExpanded?R.string.home_about_hide:R.string.home_about_show);
+        toggle.setContentDescription(getString(R.string.home_about_title));
+        ViewCompat.setStateDescription(toggle,getString(aboutExpanded?R.string.home_about_expanded:R.string.home_about_collapsed));
+    }
+
     public void open_dashboard(View v){
         Intent i = new Intent(this, DashboardActivity.class);
         startActivity(i);
@@ -69,11 +97,6 @@ public class HomeActivity extends AppCompatActivity {
     public void make_new_entry(View v){
         Intent i = new Intent(this, newEntryActivity.class);
         newEntryLauncher.launch(i);
-    }
-
-    public void contact_help(View v){
-        Intent i = new Intent(this, contactHelpActivity.class);
-        startActivity(i);
     }
 
     public void logOut(View v){

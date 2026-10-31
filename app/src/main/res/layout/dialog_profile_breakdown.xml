@@ -37,5 +37,12 @@
                 android:textSize="24sp"/>
         </LinearLayout>
         <include layout="@layout/view_sentence_breakdown"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/openDetailedBreakdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/open_detailed_breakdown"
+            android:textAllCaps="false"/>
     </LinearLayout>
 </ScrollView>

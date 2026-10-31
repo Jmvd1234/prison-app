@@ -7,11 +7,7 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
-    <string name="lorem_ipsum">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
-        volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
-        dui nec risus. Maecenas non sodales nisi, vel dictum dolor. Class aptent taciti sociosqu ad
-        litora torquent per conubia nostra, per inceptos himenaeos.
-        est.
-    </string>
+    <string name="home_about">Laya Calculator is a tool designed to help legal professionals and advocates calculate time served and remaining prison sentences under Philippine law, accounting for applicable deductions and disqualifications. By making these calculations simpler and more accessible, Laya aims to prevent overdetention and protect the right of individuals to be released when their sentences are complete.</string>
+    <string name="home_dashboard">Dashboard</string>
+    <string name="home_new_entry">New Entry</string>
 </resources>

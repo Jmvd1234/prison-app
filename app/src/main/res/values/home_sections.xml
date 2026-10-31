@@ -1,0 +1,7 @@
+<resources>
+    <string name="home_about_title">About Laya</string>
+    <string name="home_about_show">About Laya   ▾</string>
+    <string name="home_about_hide">About Laya   ▴</string>
+    <string name="home_about_expanded">Expanded</string>
+    <string name="home_about_collapsed">Collapsed</string>
+</resources>

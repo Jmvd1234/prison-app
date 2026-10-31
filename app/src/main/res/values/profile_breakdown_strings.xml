@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="profile_breakdown_title">Sentence breakdown</string>
+    <string name="profile_breakdown_title">Sentence Breakdown</string>
     <string name="minimum_remaining_sentence">Minimum remaining sentence</string>
     <string name="maximum_remaining_sentence">Maximum remaining sentence</string>
     <string name="close_profile_breakdown">Close breakdown</string>
@@ -79,5 +79,5 @@
     <string name="breakdown_next_year">Move observation date forward one year</string>
     <string name="breakdown_choose_observation_date">Choose observation date</string>
     <string name="breakdown_observation_picker_description">Observation date: %1$s. Choose observation date.</string>
-    <string name="breakdown_observation_label">Observation date</string>
+    <string name="breakdown_observation_label">Observation Date:</string>
 </resources>

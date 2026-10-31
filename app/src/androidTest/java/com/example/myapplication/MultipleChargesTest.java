@@ -59,7 +59,7 @@ public class MultipleChargesTest {
         db.UserDao().deleteUser(user);
     }
 
-    @Test public void addEntrySavesEveryChargeAndAllOutputsUseTheCombinedSentence() {
+    @Test public void addEntrySavesEveryChargeAndOutputsBeginWithMostSevereCharge() {
         try (ActivityScenario<HomeActivity> home = ActivityScenario.launch(HomeActivity.class)) {
             home.onActivity(activity -> activity.make_new_entry(null));
             await(newEntryActivity.class, activity -> {
@@ -81,9 +81,9 @@ public class MultipleChargesTest {
                     .findFragmentByTag(ProfileBreakdownDialogFragment.TAG) != null);
             Profile saved = db.ProfileDao().getProfilesByUserID(user.userID).get(0);
             assertEquals(4, saved.charges.size());
-            SentenceCalculator.Result result = SentenceCalculator.calculate(ProfileCalculationMapper.from(saved));
-            assertEquals(300, result.minSentenceDays);
-            assertEquals(600, result.maxSentenceDays);
+            SentenceCalculator.Result result = new SequentialSentencePlan(saved).calculate(LocalDate.now());
+            assertEquals(100, result.minSentenceDays);
+            assertEquals(200, result.maxSentenceDays);
             home.onActivity(activity -> {
                 ProfileBreakdownDialogFragment dialog = (ProfileBreakdownDialogFragment) activity
                         .getSupportFragmentManager().findFragmentByTag(ProfileBreakdownDialogFragment.TAG);

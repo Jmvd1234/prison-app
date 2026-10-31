@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {User.class, Profile.class, ProfileCharge.class, ProfileDeduction.class}, version=10)
+@Database(entities = {User.class, Profile.class, ProfileCharge.class, ProfileDeduction.class}, version=11)
 public abstract class AppDatabase extends RoomDatabase {
 
     // Keep existing accounts, entries, charges and photos when installing this update.
@@ -40,6 +40,13 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    public static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE Profile ADD COLUMN serviceChoices TEXT DEFAULT ''");
+            db.execSQL("ALTER TABLE Profile ADD COLUMN maximumTotalServiceDays INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
     public abstract UserDao UserDao();
     public abstract ProfileDao ProfileDao();
 
@@ -49,7 +56,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if(INSTANCE == null) {
             //apparently concept of Singleton, ig if it exists, keep it, otherwise make it
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, "prison_app_db")
-                    .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                    .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                     .allowMainThreadQueries()
                     .build();
         }

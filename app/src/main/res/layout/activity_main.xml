@@ -31,15 +31,6 @@
             android:textSize="28sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:paddingHorizontal="28dp"
-            android:text="@string/login_picker_subtitle"
-            android:textColor="@color/laya_label"
-            android:textSize="14sp" />
-
         <ProgressBar
             android:id="@+id/loginProfilesLoading"
             android:layout_width="28dp"
@@ -75,23 +66,13 @@
             android:layout_marginTop="12dp"
             android:orientation="vertical" />
 
-        <TextView
-            android:id="@+id/loginProfilesEmptyHint"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="28dp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/login_empty_hint"
-            android:textColor="@color/laya_muted"
-            android:textSize="14sp"
-            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             xmlns:app="http://schemas.android.com/apk/res-auto"
             android:id="@+id/createLoginProfileButton"
             android:layout_width="match_parent"
             android:layout_height="80dp"
-            android:layout_marginHorizontal="12dp"
+            android:layout_marginHorizontal="0dp"
             android:background="@drawable/button_background"
             android:backgroundTint="@null"
             android:elevation="0dp"
@@ -114,6 +95,20 @@
             android:paddingHorizontal="28dp"
             android:layout_marginTop="12dp"
             android:text="@string/login_local_note"
+            android:textColor="@color/laya_muted"
+            android:textSize="12sp" />
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:paddingHorizontal="28dp"
+            android:text="@string/login_attribution"
+            android:gravity="center"
             android:textColor="@color/laya_muted"
             android:textSize="12sp" />
     </LinearLayout>

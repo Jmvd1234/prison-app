@@ -23,7 +23,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private LoginProfileViewModel model;
     private LinearLayout profiles;
-    private View createButton, loading, emptyHint, retry;
+    private View createButton, loading, retry;
     private TextView status;
     private List<LoginProfileViewModel.Item> rendered;
 
@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
         profiles = findViewById(R.id.loginProfilesContainer);
         createButton = findViewById(R.id.createLoginProfileButton);
         loading = findViewById(R.id.loginProfilesLoading);
-        emptyHint = findViewById(R.id.loginProfilesEmptyHint);
         status = findViewById(R.id.loginProfilesStatus);
         retry = findViewById(R.id.loginProfilesRetry);
         model = new ViewModelProvider(this).get(LoginProfileViewModel.class);
@@ -75,8 +74,6 @@ public class MainActivity extends AppCompatActivity {
             card.findViewById(R.id.deleteLoginProfileButton).setEnabled(enabled);
         }
         loading.setVisibility(state.busy ? View.VISIBLE : View.GONE);
-        emptyHint.setVisibility(state.loaded && state.profiles.size() == 1 && state.profiles.get(0).guest
-                ? View.VISIBLE : View.GONE);
         boolean listError = state.error != 0 && (state.errorTarget.equals("list")
                 || !hasProfileDialog());
         status.setVisibility(listError ? View.VISIBLE : View.GONE);

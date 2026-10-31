@@ -81,6 +81,25 @@ final class ProfilePhotoStore {
         }
     }
 
+    /** Backup photos are already normalized JPEGs. Validate and copy without quality loss. */
+    static String restoreBackupPhoto(Context context,File input) throws IOException {
+        BitmapFactory.Options info=new BitmapFactory.Options();info.inJustDecodeBounds=true;
+        BitmapFactory.decodeFile(input.getAbsolutePath(),info);
+        if(!"image/jpeg".equals(info.outMimeType)||info.outWidth<=0||info.outHeight<=0
+                ||info.outWidth>MAX_EDGE||info.outHeight>MAX_EDGE||input.length()>MAX_INPUT_BYTES)
+            throw new IOException("Invalid profile photo in backup.");
+        Bitmap decoded=BitmapFactory.decodeFile(input.getAbsolutePath());
+        if(decoded==null)throw new IOException("Damaged profile photo in backup.");
+        decoded.recycle();
+        String path="profile_photos/"+UUID.randomUUID()+".jpg";File output=resolve(context,path);
+        if(!output.getParentFile().isDirectory()&&!output.getParentFile().mkdirs())throw new IOException("Photo storage unavailable.");
+        boolean saved=false;
+        try(java.io.InputStream in=new java.io.FileInputStream(input);java.io.OutputStream out=new FileOutputStream(output)){
+            ProfileTransferArchive.copy(in,out,MAX_INPUT_BYTES);saved=true;
+        }finally{if(!saved)output.delete();}
+        return path;
+    }
+
     static File resolve(Context context, String path) {
         // Only our generated filenames are accepted; never delete arbitrary supplied paths.
         if (path == null || !path.matches("profile_photos/[0-9a-fA-F-]{36}\\.jpg")) return null;

@@ -224,7 +224,6 @@ public class BreakdownActivityTest {
             });
             onView(withId(R.id.observationDateHelp)).perform(click());
             onView(withText(R.string.tooltip_observation)).check(matches(isDisplayed()));
-            screenshot("observation-date-tooltip.png");
             pressBack();
             onView(withId(R.id.breakdownObservationDate)).perform(click());
             scenario.onActivity(activity -> assertEquals(Long.valueOf(chosen.minusDays(1)
@@ -267,53 +266,6 @@ public class BreakdownActivityTest {
 
     private MaterialDatePicker<?> observationPicker(BreakdownActivity activity) {
         return (MaterialDatePicker<?>) activity.getSupportFragmentManager().findFragmentByTag("breakdown_observation_picker");
-    }
-
-    @Test public void dateButtonsUseCalendarJumpsClampAndKeepThePreviewUnsaved() throws Exception {
-        Profile p = db.ProfileDao().getProfileByProfileID(ordinaryID);
-        SentenceProjection.Range range = SentenceProjection.create(p, LocalDate.now());
-        Intent intent = new Intent(context, BreakdownActivity.class)
-                .putExtra(BreakdownActivity.EXTRA_PROFILE_ID, ordinaryID);
-        try (ActivityScenario<BreakdownActivity> scenario = ActivityScenario.launch(intent)) {
-            awaitTodayResult();
-            scenario.onActivity(activity -> {
-                Slider slider = activity.findViewById(R.id.breakdownDateSlider);
-                slider.setValue(range.dates.indexOf(LocalDate.of(2024, 1, 31)));
-                activity.findViewById(R.id.breakdownMonthForward).performClick();
-                assertSelectedDate(activity, p, range, LocalDate.of(2024, 2, 29));
-                activity.findViewById(R.id.breakdownYearForward).performClick();
-                assertSelectedDate(activity, p, range, LocalDate.of(2025, 2, 28));
-                activity.findViewById(R.id.breakdownYearBack).performClick();
-                assertSelectedDate(activity, p, range, LocalDate.of(2024, 2, 28));
-                activity.findViewById(R.id.breakdownDayForward).performClick();
-                assertSelectedDate(activity, p, range, LocalDate.of(2024, 2, 29));
-                activity.findViewById(R.id.breakdownDayBack).performClick();
-                assertSelectedDate(activity, p, range, LocalDate.of(2024, 2, 28));
-                activity.findViewById(R.id.breakdownMonthBack).performClick();
-                assertSelectedDate(activity, p, range, LocalDate.of(2024, 1, 28));
-                slider.setValue(1);
-                activity.findViewById(R.id.breakdownYearBack).performClick();
-                assertSelectedDate(activity, p, range, range.start);
-                for (int id : new int[]{R.id.breakdownDayBack, R.id.breakdownMonthBack, R.id.breakdownYearBack})
-                    assertFalse(activity.findViewById(id).isEnabled());
-                slider.setValue(range.dates.size() - 2);
-                activity.findViewById(R.id.breakdownMonthForward).performClick();
-                assertSelectedDate(activity, p, range, range.end);
-                for (int id : new int[]{R.id.breakdownDayForward, R.id.breakdownMonthForward, R.id.breakdownYearForward})
-                    assertFalse(activity.findViewById(id).isEnabled());
-                activity.findViewById(R.id.timelineTodayLabel).performClick();
-                activity.findViewById(R.id.breakdownDayBack).performClick();
-                assertSelectedDate(activity, p, range, LocalDate.now().minusDays(1));
-            });
-            screenshot("date-step-controls.png");
-            scenario.recreate();
-            await(BreakdownActivity.class, activity -> {
-                if (activity.findViewById(R.id.breakdownCard).getVisibility() != View.VISIBLE) return false;
-                assertSelectedDate(activity, p, range, LocalDate.now().minusDays(1));
-                return true;
-            });
-        }
-        assertEquals(p.observationDate, db.ProfileDao().getProfileByProfileID(ordinaryID).observationDate);
     }
 
     private void assertSelectedDate(Activity activity, Profile p, SentenceProjection.Range range, LocalDate date) {

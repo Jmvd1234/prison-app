@@ -23,7 +23,6 @@ import java.time.LocalDate;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Arrays;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,10 +40,14 @@ public class BreakdownActivity extends AppCompatActivity {
     private TimelineMilestonesLayout timeline;
     private View breakdownCard, previewControls, releaseDates;
     private Slider dateSlider;
-    private View[] backwardDateButtons, forwardDateButtons;
+    private ZoomTimelineScrollView zoomScroll;
+    private TextView zoomLevel;
     private Profile profile;
     private DeductionDatesController deductions;
     private SentenceProjection.Range range;
+    private SequentialSentencePlan servicePlan;
+    private boolean serviceSaving, autoPrompted, selectNewCharge, openingChargeChecked;
+
     private LocalDate selectedDate, projectionToday;
     private boolean followToday = true, bindingSlider;
     private int generation;
@@ -62,25 +65,23 @@ public class BreakdownActivity extends AppCompatActivity {
         findViewById(R.id.breakdownBackButton).setOnClickListener(view -> finish());
         profileName = findViewById(R.id.breakdownProfileName);
         observationDate = findViewById(R.id.breakdownObservationDate);
+        View observationHelp=findViewById(R.id.observationDateHelp);
+        int helpPadding=Math.round(5*getResources().getDisplayMetrics().density);
+        observationHelp.setPadding(helpPadding,helpPadding,helpPadding,helpPadding);
         observationDate.setPaintFlags(observationDate.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         observationDate.setOnClickListener(view -> showObservationDatePicker());
         status = findViewById(R.id.breakdownStatus);
         breakdownCard = findViewById(R.id.breakdownCard);
         previewControls = findViewById(R.id.breakdownPreviewControls);
         dateSlider = findViewById(R.id.breakdownDateSlider);
-        backwardDateButtons = new View[]{findViewById(R.id.breakdownDayBack),
-                findViewById(R.id.breakdownMonthBack), findViewById(R.id.breakdownYearBack)};
-        forwardDateButtons = new View[]{findViewById(R.id.breakdownDayForward),
-                findViewById(R.id.breakdownMonthForward), findViewById(R.id.breakdownYearForward)};
-        ChronoUnit[] units = {ChronoUnit.DAYS, ChronoUnit.MONTHS, ChronoUnit.YEARS};
-        for (int i = 0; i < units.length; i++) {
-            final ChronoUnit unit = units[i];
-            backwardDateButtons[i].setOnClickListener(view -> shiftDate(-1, unit));
-            forwardDateButtons[i].setOnClickListener(view -> shiftDate(1, unit));
-        }
         rangeStart = findViewById(R.id.breakdownRangeStart);
         rangeEnd = findViewById(R.id.breakdownRangeEnd);
         timeline = findViewById(R.id.breakdownTimeline);
+        zoomScroll=findViewById(R.id.timelineZoomScroll);
+        zoomLevel=findViewById(R.id.timelineZoomLevel);
+        if(savedInstanceState!=null)zoomScroll.restoreZoom(savedInstanceState.getFloat("timeline_zoom",1));
+        findViewById(R.id.timelineZoomIn).setOnClickListener(v->zoomTimeline(2));
+        findViewById(R.id.timelineZoomOut).setOnClickListener(v->zoomTimeline(.5f));
         releaseDates = findViewById(R.id.breakdownReleaseDates);
         minimumReleaseDate = findViewById(R.id.breakdownMinimumReleaseDate);
         maximumReleaseDate = findViewById(R.id.breakdownMaximumReleaseDate);
@@ -94,14 +95,28 @@ public class BreakdownActivity extends AppCompatActivity {
                 selectedDate = LocalDate.ofEpochDay(savedInstanceState.getLong(STATE_DATE));
             }
         }
+        openingChargeChecked=savedInstanceState!=null&&savedInstanceState.getBoolean("service_opening_checked");
+        autoPrompted=savedInstanceState!=null&&savedInstanceState.getBoolean("service_auto_prompted");
+        findViewById(R.id.serviceAddCharge).setOnClickListener(v->showAddCharge());
+        getSupportFragmentManager().setFragmentResultListener(AddServiceChargeDialog.RESULT,this,(key,result)->advanceCharge(result));
         rebindObservationDatePicker();
         dateSlider.setLabelFormatter(value -> range == null ? "" : range.dates.get(
                 Math.min(Math.round(value), range.dates.size() - 1)).format(SentenceCalculator.DISPLAY_DATE));
         dateSlider.addOnChangeListener((slider, value, fromUser) -> {
             if (bindingSlider || range == null) return;
             LocalDate date = range.dates.get(Math.round(value));
+            LocalDate bounded=clampSelection(date);
+            if(!date.equals(bounded)){
+                date=bounded;bindingSlider=true;slider.setValue(range.dates.indexOf(date));bindingSlider=false;
+            }
             followToday = date.equals(LocalDate.now());
             renderDate(date);
+            if(fromUser&&servicePlan!=null){
+                if(date.isBefore(servicePlan.active().maximum))autoPrompted=false;
+                else if(date.equals(servicePlan.active().maximum)&&!autoPrompted&&servicePlan.hasNext(date)){
+                    autoPrompted=true;dateSlider.post(this::showAddCharge);
+                }
+            }
         });
 
         int profileID = getIntent().getIntExtra(EXTRA_PROFILE_ID, -1);
@@ -132,24 +147,36 @@ public class BreakdownActivity extends AppCompatActivity {
         if (profile == null || isFinishing() || isDestroyed()) return;
         final int request = ++generation;
         final LocalDate today = LocalDate.now();
-        final Profile saved = profile;
+        final Profile requested = profile;
         projectionToday = today;
         dateSlider.setEnabled(false);
         observationDate.setEnabled(false);
-        setDateButtonsEnabled(false, false);
         executor.execute(() -> {
-            SentenceCalculator.Result current = SentenceCalculator.calculate(ProfileCalculationMapper.from(saved, today));
-            SentenceProjection.Range calculatedRange = null;
-            String problem = null;
-            if (current.available) {
-                try { calculatedRange = SentenceProjection.create(saved, today); }
-                catch (IllegalArgumentException error) { problem = error.getMessage(); }
-            }
-            final SentenceProjection.Range completedRange = calculatedRange;
-            final String projectionProblem = problem;
+            Profile saved;
+            SequentialSentencePlan plan=null;
+            SentenceProjection.Range calculatedRange=null;
+            SentenceCalculator.Result current=null;
+            String problem=null;
+            try {
+                saved=com.example.myapplication.db.AppDatabase.getInstance(this).ProfileDao().getProfileByProfileID(requested.profileID);
+                if(saved==null||saved.userID!=requested.userID)throw new IllegalArgumentException("Profile no longer available.");
+                if(saved.charges.size()>1){
+                    plan=new SequentialSentencePlan(saved);
+                    calculatedRange=plan.range(today,true);
+                    current=plan.calculate(today.isBefore(plan.active().start)?plan.active().start:today);
+                }else{
+                    current=SentenceCalculator.calculate(ProfileCalculationMapper.from(saved,today));
+                    if(current.available)calculatedRange=SentenceProjection.create(saved,today);
+                }
+            }catch(RuntimeException error){saved=requested;problem=error.getMessage();}
+            final Profile loaded=saved;
+            final SequentialSentencePlan completedPlan=plan;
+            final SentenceCalculator.Result completedCurrent=current;
+            final SentenceProjection.Range completedRange=calculatedRange;
+            final String projectionProblem=problem;
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed() || request != generation) return;
-                if (currentUserID() != saved.userID) {
+                if (currentUserID() != loaded.userID) {
                     showError(getString(R.string.breakdown_sign_in));
                     return;
                 }
@@ -157,11 +184,17 @@ public class BreakdownActivity extends AppCompatActivity {
                     prepareProjection();
                     return;
                 }
-                if (!current.available) {
-                    showError(getString(R.string.breakdown_calculation_failed, current.problem));
+                if (completedCurrent==null || !completedCurrent.available || projectionProblem!=null) {
+                    showError(getString(R.string.breakdown_calculation_failed, projectionProblem!=null?projectionProblem:completedCurrent==null?"Check profile inputs.":completedCurrent.problem));
                     return;
                 }
+                profile=loaded;
+                servicePlan=completedPlan;
                 range = completedRange;
+                bindChargeGrid();
+                findViewById(R.id.serviceAddCharge).setVisibility(View.VISIBLE);
+                findViewById(R.id.serviceAddCharge).setEnabled(!serviceSaving);
+                timeline.setIntermediateCharge(servicePlan!=null&&!servicePlan.finalCharge());
                 if (range == null) {
                     previewControls.setVisibility(View.GONE);
                     renderDate(today);
@@ -184,10 +217,21 @@ public class BreakdownActivity extends AppCompatActivity {
                     if (followToday && !date.equals(projectionToday)) prepareProjection();
                     else selectDate(date);
                 });
+                timeline.setChargeContext(servicePlan);
+                zoomScroll.configure(range.dates.size()-1,()->zoomLevel.setText(zoomScroll.getZoom()<=1.001f?getString(R.string.timeline_full):getString(R.string.timeline_zoom_level,zoomScroll.getZoom())));
                 previewControls.setVisibility(View.VISIBLE);
                 // Read the latest selection: a restored picker may confirm while this work runs.
-                LocalDate preview = followToday ? today : selectedDate;
+                LocalDate preview = selectNewCharge?selectionFloor():followToday ? today : selectedDate;
+                if(selectNewCharge){selectNewCharge=false;followToday=false;}
                 selectDate(preview != null && range.dates.contains(preview) ? preview : today);
+                if(!openingChargeChecked){
+                    openingChargeChecked=true;
+                    if(servicePlan!=null&&!today.isBefore(servicePlan.active().maximum)
+                            &&selectedDate.equals(servicePlan.active().maximum)&&servicePlan.hasNext(selectedDate)){
+                        autoPrompted=true;
+                        showAddCharge();
+                    }
+                }
             });
         });
     }
@@ -196,7 +240,7 @@ public class BreakdownActivity extends AppCompatActivity {
         if (range == null || selectedDate == null || !observationDate.isEnabled()
                 || getSupportFragmentManager().isStateSaved()
                 || getSupportFragmentManager().findFragmentByTag(OBSERVATION_PICKER) != null) return;
-        long start = pickerMillis(range.start), end = pickerMillis(range.end);
+        long start = pickerMillis(selectionFloor()), end = pickerMillis(selectionCeiling());
         CalendarConstraints constraints = new CalendarConstraints.Builder()
                 .setStart(start).setEnd(end).setOpenAt(pickerMillis(selectedDate))
                 .setValidator(CompositeDateValidator.allOf(Arrays.asList(
@@ -233,47 +277,36 @@ public class BreakdownActivity extends AppCompatActivity {
         if (fragment instanceof MaterialDatePicker<?>) connectObservationDatePicker((MaterialDatePicker<Long>) fragment);
     }
 
-    private void shiftDate(int amount, ChronoUnit unit) {
-        if (range == null || selectedDate == null || !dateSlider.isEnabled()) return;
-        // Calendar jumps clamp to a valid day in shorter months, then to the timeline bounds.
-        LocalDate date = selectedDate.plus(amount, unit);
-        if (date.isBefore(range.start)) date = range.start;
-        if (date.isAfter(range.end)) date = range.end;
-        followToday = date.equals(LocalDate.now());
-        selectDate(date);
-    }
-
-    private void setDateButtonsEnabled(boolean backward, boolean forward) {
-        for (View button : backwardDateButtons) {
-            button.setEnabled(backward);
-            button.setAlpha(backward ? 1f : 0.35f);
-        }
-        for (View button : forwardDateButtons) {
-            button.setEnabled(forward);
-            button.setAlpha(forward ? 1f : 0.35f);
-        }
+    private void zoomTimeline(float factor){
+        if(range!=null&&selectedDate!=null)zoomScroll.zoomBy(factor,range.positionOf(selectedDate));
     }
 
     private void selectDate(LocalDate date) {
+        date=clampSelection(date);
         bindingSlider = true;
         dateSlider.setValue(range.dates.indexOf(date));
         bindingSlider = false;
         renderDate(date);
+        zoomScroll.reveal(range.positionOf(date));
     }
 
     private void renderDate(LocalDate date) {
         selectedDate = date;
-        boolean canMove = range != null && dateSlider.isEnabled();
-        setDateButtonsEnabled(canMove && date.isAfter(range.start), canMove && date.isBefore(range.end));
         if (deductions != null) deductions.setObservationDate(date);
-        SentenceCalculator.Result result = SentenceCalculator.calculatePreview(ProfileCalculationMapper.from(profile, date));
+        SentenceCalculator.Result result = servicePlan==null?SentenceCalculator.calculatePreview(ProfileCalculationMapper.from(profile, date)):servicePlan.calculate(date);
         observationDate.setText(getString(date.equals(LocalDate.now())
                         ? R.string.breakdown_observation_today : R.string.breakdown_observation_preview,
                 date.format(SentenceCalculator.DISPLAY_DATE)));
+        boolean intermediate=servicePlan!=null&&!servicePlan.finalCharge();
+        ((TextView)findViewById(R.id.serviceMinimumHeading)).setText(intermediate?R.string.service_minimum:R.string.breakdown_minimum_release);
+        ((TextView)findViewById(R.id.serviceMaximumHeading)).setText(intermediate?R.string.service_maximum:R.string.breakdown_maximum_release);
         observationDate.setContentDescription(getString(R.string.breakdown_observation_picker_description,
                 observationDate.getText()));
         observationDate.setEnabled(range != null);
         findViewById(R.id.breakdownObservationRow).setVisibility(View.VISIBLE);
+        findViewById(R.id.serviceChargesSection).setVisibility(View.VISIBLE);
+        ((TextView)findViewById(R.id.serviceChargesHeading)).setText(
+                getString(R.string.service_charges_total, profile.charges.size()));
         if (!result.available) {
             releaseDates.setVisibility(View.GONE);
             breakdownCard.setVisibility(View.GONE);
@@ -287,7 +320,12 @@ public class BreakdownActivity extends AppCompatActivity {
         minimumReleaseState.setText(dates.minimumReached ? R.string.breakdown_zero_reached : R.string.breakdown_release_estimate);
         maximumReleaseState.setText(dates.maximumReached ? R.string.breakdown_zero_reached : R.string.breakdown_release_estimate);
         releaseDates.setVisibility(View.VISIBLE);
+        timeline.setOverdueStart(servicePlan==null?range.maximumCompletion:servicePlan.overdueStart(date));
+        timeline.setLimitRelevant(servicePlan!=null&&servicePlan.limitRelevant(date));
         timeline.setPreview(date, dates);
+        boolean limited=servicePlan!=null&&servicePlan.limitRelevant(date);
+        findViewById(R.id.serviceLimitMessage).setVisibility(limited?View.VISIBLE:View.GONE);
+        findViewById(R.id.serviceAddCharge).setEnabled(!serviceSaving&&servicePlan!=null&&servicePlan.hasNext(date));
         // Release dates stay pinned at their first zero; balances keep counting with earned credits.
         Bundle values = BreakdownViewBinder.createArguments(
                 getString(R.string.breakdown_balance_value, result.minimumText(date), result.minRemainingDays),
@@ -296,6 +334,144 @@ public class BreakdownActivity extends AppCompatActivity {
         BreakdownViewBinder.bind(breakdownCard, values);
         status.setVisibility(View.GONE);
         breakdownCard.setVisibility(View.VISIBLE);
+    }
+
+    private LocalDate selectionFloor(){return servicePlan==null?range.start:servicePlan.active().start;}
+
+    private LocalDate selectionCeiling(){
+        // A remaining serviceable charge must be appended before previewing beyond
+        // this handoff. Final charges and custody-limit cutoffs retain overdue space.
+        return servicePlan!=null&&servicePlan.hasNext()?servicePlan.active().maximum:range.end;
+    }
+
+    private LocalDate clampSelection(LocalDate date){
+        if(date.isBefore(selectionFloor()))return selectionFloor();
+        if(date.isAfter(selectionCeiling()))return selectionCeiling();
+        return date;
+    }
+
+    private void showAddCharge(){
+        if(servicePlan==null||selectedDate==null||!servicePlan.hasNext(selectedDate)||serviceSaving||!dateSlider.isEnabled()
+                ||getSupportFragmentManager().isStateSaved()
+                ||getSupportFragmentManager().findFragmentByTag(AddServiceChargeDialog.TAG)!=null)return;
+        AddServiceChargeDialog.create(servicePlan,selectedDate).show(getSupportFragmentManager(),AddServiceChargeDialog.TAG);
+    }
+
+    private void bindChargeGrid() {
+        android.widget.LinearLayout grid=findViewById(R.id.serviceChargeGrid);
+        grid.removeAllViews();
+        int count=servicePlan==null?1:servicePlan.stages.size();
+        float density=getResources().getDisplayMetrics().density;
+        int gap=Math.round(4*density),height=Math.round(48*density);
+        android.widget.LinearLayout row=null;
+        final int columns=5;
+        for(int index=0;index<((count+columns)/columns)*columns;index++) {
+            if(index%columns==0) {
+                row=new android.widget.LinearLayout(this);
+                row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+                grid.addView(row,new android.widget.LinearLayout.LayoutParams(-1,-2));
+            }
+            final int number=index+1;
+            View cell;
+            if(number<=count) {
+                android.widget.FrameLayout pill=new android.widget.FrameLayout(this);
+                pill.setTag("service-pill-"+number);
+                android.graphics.drawable.GradientDrawable shape=new android.graphics.drawable.GradientDrawable();
+                shape.setColor(getColor(R.color.laya_surface));shape.setCornerRadius(Math.round(20*density));
+                shape.setStroke(Math.round(density),getColor(R.color.laya_border));
+                pill.setBackground(new android.graphics.drawable.InsetDrawable(shape,0,gap,0,gap));
+                TextView label=new TextView(this);label.setText(String.valueOf(number));label.setTextSize(14);
+                label.setTextColor(getColor(R.color.laya_label));label.setGravity(android.view.Gravity.CENTER);
+                label.setContentDescription(getString(R.string.service_charge_number,number));
+                android.widget.FrameLayout.LayoutParams textParams=new android.widget.FrameLayout.LayoutParams(-1,-1);
+                textParams.setMarginEnd(Math.round(32*density));
+                pill.addView(label,textParams);
+                if(number>1){
+                    androidx.appcompat.widget.AppCompatImageButton close=new androidx.appcompat.widget.AppCompatImageButton(this);
+                    close.setImageResource(R.drawable.charge_remove);
+                    close.setImageTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.laya_label)));
+                    android.util.TypedValue feedback=new android.util.TypedValue();
+                    getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless,feedback,true);
+                    close.setBackgroundResource(feedback.resourceId);close.setPadding(gap*2,gap*2,gap*2,gap*2);
+                    close.setTag("service-charge-"+number);
+                    close.setContentDescription(getString(R.string.service_remove_charge,number));
+                    close.setOnClickListener(v->removeCharge(number));
+                    pill.addView(close,new android.widget.FrameLayout.LayoutParams(Math.round(32*density),height,android.view.Gravity.END|android.view.Gravity.CENTER_VERTICAL));
+                }else pill.setTag("service-charge-1");
+                cell=pill;
+            } else if(number==count+1) {
+                com.google.android.material.button.MaterialButton add=new com.google.android.material.button.MaterialButton(
+                        this,null,com.google.android.material.R.attr.materialButtonOutlinedStyle);
+                add.setId(R.id.serviceAddCharge);add.setText(R.string.service_add);add.setTextSize(11);add.setAllCaps(false);
+                add.setTextColor(getColor(R.color.laya_label));add.setMinWidth(0);add.setMinimumWidth(0);
+                add.setPadding(gap,0,gap,0);add.setCornerRadius(Math.round(20*density));
+                add.setStrokeColor(android.content.res.ColorStateList.valueOf(getColor(R.color.laya_border)));
+                add.setStrokeWidth(Math.round(density));
+                add.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.laya_surface)));
+                add.setInsetTop(gap);add.setInsetBottom(gap);
+                add.setOnClickListener(v->showAddCharge());cell=add;
+            } else cell=new View(this);
+            android.widget.LinearLayout.LayoutParams params=new android.widget.LinearLayout.LayoutParams(0,height,1);
+            if(index%columns<columns-1)params.setMarginEnd(gap);
+            row.addView(cell,params);
+        }
+    }
+
+    private void removeCharge(int number) {
+        if(serviceSaving||servicePlan==null||!dateSlider.isEnabled()||number<2||number>servicePlan.stages.size())return;
+        final String expected=profile.serviceChoices==null?"":profile.serviceChoices;
+        final LocalDate handoff=servicePlan.stages.get(number-1).start;
+        serviceSaving=true;
+        findViewById(R.id.serviceAddCharge).setEnabled(false);
+        dateSlider.setEnabled(false);
+        final int id=profile.profileID;final long owner=currentUserID();
+        executor.execute(()->{
+            Profile saved=null;String failure=null;
+            try {saved=com.example.myapplication.db.AppDatabase.getInstance(this).ProfileDao()
+                    .removeServiceFrom(id,owner,expected,number);}
+            catch(RuntimeException error){failure=error.getMessage();}
+            final Profile completed=saved;final String problem=failure;
+            runOnUiThread(()->{
+                if(isFinishing()||isDestroyed())return;
+                serviceSaving=false;
+                if(completed!=null){
+                    profile=completed;autoPrompted=true;selectNewCharge=false;
+                    selectedDate=handoff;followToday=false;prepareProjection();
+                } else {
+                    prepareProjection();
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                        .setMessage(getString(R.string.service_save_failed,problem)).setPositiveButton(android.R.string.ok,null).show();
+                }
+            });
+        });
+    }
+
+    private void advanceCharge(Bundle choice){
+        if(serviceSaving)return;
+        serviceSaving=true;
+        findViewById(R.id.serviceAddCharge).setEnabled(false);
+        dateSlider.setEnabled(false);
+        final int id=getIntent().getIntExtra(EXTRA_PROFILE_ID,-1);final long owner=currentUserID();
+        executor.execute(()->{
+            Profile saved=null;String failure=null;
+            try{
+                com.example.myapplication.db.ProfileDao dao=com.example.myapplication.db.AppDatabase.getInstance(this).ProfileDao();
+                LocalDate observation=LocalDate.parse(choice.getString("observation"));
+                saved=choice.containsKey("customDate")
+                    ?dao.advanceServiceCustom(id,owner,choice.getString("expected",""),LocalDate.parse(choice.getString("customDate")),observation)
+                    :dao.advanceService(id,owner,choice.getString("expected",""),choice.getBoolean("fromMaximum"),observation);
+            }
+            catch(RuntimeException error){failure=error.getMessage();}
+            final Profile completed=saved;final String problem=failure;
+            runOnUiThread(()->{
+                if(isFinishing()||isDestroyed())return;
+                serviceSaving=false;
+                if(completed!=null){profile=completed;autoPrompted=false;selectNewCharge=true;followToday=false;prepareProjection();}
+                else{findViewById(R.id.serviceAddCharge).setEnabled(true);dateSlider.setEnabled(true);
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                        .setMessage(getString(R.string.service_save_failed,problem)).setPositiveButton(android.R.string.ok,null).show();}
+            });
+        });
     }
 
     private void showError(String message) {
@@ -310,6 +486,9 @@ public class BreakdownActivity extends AppCompatActivity {
 
     @Override protected void onSaveInstanceState(Bundle outState) {
         if (deductions != null) deductions.saveState(outState);
+        outState.putBoolean("service_auto_prompted",autoPrompted);
+        outState.putBoolean("service_opening_checked",openingChargeChecked);
+        outState.putFloat("timeline_zoom",zoomScroll.getZoom());
         outState.putBoolean(STATE_TODAY, followToday);
         if (selectedDate != null) outState.putLong(STATE_DATE, selectedDate.toEpochDay());
         super.onSaveInstanceState(outState);

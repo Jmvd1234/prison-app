@@ -60,110 +60,61 @@
                 tools:text="Alex Rivera"
                 tools:visibility="visible"/>
             <LinearLayout
-                android:id="@+id/breakdownObservationRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="12dp"
-                android:background="@drawable/laya_summary_box"
-                android:padding="12dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:visibility="gone"
-                tools:visibility="visible">
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-                    <TextView
-                        style="@style/BreakdownBalanceLabel"
-                        android:labelFor="@id/breakdownObservationDate"
-                        android:text="@string/breakdown_observation_label"
-                        android:textSize="13sp"/>
-                    <TextView
-                        android:id="@+id/breakdownObservationDate"
-                        style="@style/BreakdownBalanceValue"
-                        android:minHeight="48dp"
-                        android:layout_marginTop="0dp"
-                        android:gravity="center_vertical"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:textColor="@color/laya_label"
-                        tools:text="Oct 14, 2026 · Today"/>
-                </LinearLayout>
-                <com.example.myapplication.InfoTooltip
-                    android:id="@+id/observationDateHelp"
-                    style="@style/InfoTooltipButton"
-                    app:helpTitle="@string/tooltip_observation_title"
-                    app:helpText="@string/tooltip_observation"/>
-            </LinearLayout>
-            <LinearLayout
                 android:id="@+id/breakdownPreviewControls"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="13dp"
+                android:layout_marginHorizontal="-16dp"
+                android:background="@drawable/laya_card"
+                android:paddingLeft="26dp"
+                android:paddingRight="26dp"
+                android:paddingTop="23dp"
+                android:paddingBottom="29dp"
                 android:orientation="vertical"
                 android:visibility="gone"
                 tools:visibility="visible">
+
+                <TextView android:id="@+id/serviceLimitMessage" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/service_limit_reached" android:textColor="@color/laya_danger" android:textSize="14sp" android:visibility="gone"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/overview_detail" android:textColor="@color/laya_text" android:textStyle="bold" android:textSize="20sp"/>
                 <LinearLayout
-                    android:id="@+id/breakdownDateSteps"
+                    android:id="@+id/breakdownObservationRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="8dp"
                     android:layout_marginBottom="8dp"
-                    android:orientation="horizontal">
-                    <LinearLayout
-                        style="@style/BreakdownDateStepGroup">
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/breakdownDayBack"
-                            style="@style/BreakdownDateStepButton"
-                            android:contentDescription="@string/breakdown_previous_day"
-                            android:text="@string/breakdown_step_minus"/>
-                        <androidx.appcompat.widget.AppCompatTextView
-                            style="@style/BreakdownDateStepLabel"
-                            android:text="@string/breakdown_step_day"/>
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/breakdownDayForward"
-                            style="@style/BreakdownDateStepButton"
-                            android:contentDescription="@string/breakdown_next_day"
-                            android:text="@string/breakdown_step_plus"/>
-                    </LinearLayout>
-                    <LinearLayout
-                        style="@style/BreakdownDateStepGroup"
-                        android:layout_marginHorizontal="6dp">
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/breakdownMonthBack"
-                            style="@style/BreakdownDateStepButton"
-                            android:contentDescription="@string/breakdown_previous_month"
-                            android:text="@string/breakdown_step_minus"/>
-                        <androidx.appcompat.widget.AppCompatTextView
-                            style="@style/BreakdownDateStepLabel"
-                            android:text="@string/breakdown_step_month"/>
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/breakdownMonthForward"
-                            style="@style/BreakdownDateStepButton"
-                            android:contentDescription="@string/breakdown_next_month"
-                            android:text="@string/breakdown_step_plus"/>
-                    </LinearLayout>
-                    <LinearLayout
-                        style="@style/BreakdownDateStepGroup">
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/breakdownYearBack"
-                            style="@style/BreakdownDateStepButton"
-                            android:contentDescription="@string/breakdown_previous_year"
-                            android:text="@string/breakdown_step_minus"/>
-                        <androidx.appcompat.widget.AppCompatTextView
-                            style="@style/BreakdownDateStepLabel"
-                            android:text="@string/breakdown_step_year"/>
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/breakdownYearForward"
-                            style="@style/BreakdownDateStepButton"
-                            android:contentDescription="@string/breakdown_next_year"
-                            android:text="@string/breakdown_step_plus"/>
-                    </LinearLayout>
+                    android:background="@drawable/laya_summary_box"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="4dp"
+                    android:paddingVertical="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:labelFor="@id/breakdownObservationDate"
+                        android:text="@string/breakdown_observation_label"
+                        android:textColor="@color/laya_label" android:textSize="16sp"/>
+                    <TextView android:id="@+id/breakdownObservationDate"
+                        android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                        android:minHeight="32dp" android:gravity="center_vertical"
+                        android:textSize="16sp" android:textStyle="bold"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true" android:focusable="true"
+                        android:textColor="@color/laya_label" tools:text="Oct 25, 2026 · Today"/>
+                    <com.example.myapplication.InfoTooltip android:id="@+id/observationDateHelp"
+                        style="@style/InfoTooltipButton" android:layout_width="28dp" android:layout_height="28dp"
+                        app:helpTitle="@string/tooltip_observation_title"
+                        app:helpText="@string/tooltip_observation"/>
                 </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/timelineZoomOut" style="@style/BreakdownDateStepButton" android:text="−" android:contentDescription="@string/timeline_zoom_out"/>
+                    <TextView android:id="@+id/timelineZoomLevel" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:gravity="center" android:textColor="@color/laya_label"/>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/timelineZoomIn" style="@style/BreakdownDateStepButton" android:text="+" android:contentDescription="@string/timeline_zoom_in"/>
+                </LinearLayout>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/timeline_zoom_hint" android:textColor="@color/laya_label" android:textSize="12sp"/>
+                <com.example.myapplication.ZoomTimelineScrollView android:id="@+id/timelineZoomScroll" android:layout_width="match_parent" android:layout_height="wrap_content">
                 <com.example.myapplication.TimelineMilestonesLayout
                     android:id="@+id/breakdownTimeline"
                     android:layout_width="match_parent"
@@ -180,6 +131,7 @@
                         app:trackColorInactive="@color/app_slider_inactive"
                         app:tickVisible="false"/>
                 </com.example.myapplication.TimelineMilestonesLayout>
+                </com.example.myapplication.ZoomTimelineScrollView>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:gravity="center_vertical">
                     <TextView
@@ -217,12 +169,30 @@
                         android:textSize="12sp"
                         tools:text="End: Oct 5, 2026"/>
                 </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/serviceChargesSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="0dp"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+                    <TextView android:id="@+id/serviceChargesHeading" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="@string/service_charges" android:textColor="@color/laya_label" android:textSize="12sp"/>
+                    <LinearLayout android:id="@+id/serviceChargeGrid" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:orientation="vertical">
+                        <com.google.android.material.button.MaterialButton android:id="@+id/serviceAddCharge"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="wrap_content"
+                            android:layout_height="48dp" android:text="@string/service_add" android:textAllCaps="false"/>
+                    </LinearLayout>
+            </LinearLayout>
             </LinearLayout>
             <LinearLayout
                 android:id="@+id/breakdownReleaseDates"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginVertical="8dp"
+                android:layout_marginVertical="0dp"
                 android:background="@drawable/breakdown_table_background"
                 android:orientation="vertical"
                 android:padding="14dp"
@@ -245,6 +215,7 @@
                             style="@style/BreakdownBalanceLabel"
                             android:drawableStart="@drawable/release_minimum_dot"
                             android:drawablePadding="6dp"
+                            android:id="@+id/serviceMinimumHeading"
                             android:labelFor="@id/breakdownMinimumReleaseDate"
                             android:text="@string/breakdown_minimum_release"
                             android:textSize="13sp"
@@ -273,6 +244,7 @@
                             style="@style/BreakdownBalanceLabel"
                             android:drawableStart="@drawable/release_maximum_dot"
                             android:drawablePadding="6dp"
+                            android:id="@+id/serviceMaximumHeading"
                             android:labelFor="@id/breakdownMaximumReleaseDate"
                             android:text="@string/breakdown_maximum_release"
                             android:textSize="13sp"
@@ -308,6 +280,7 @@
                 tools:visibility="gone"/>
             <FrameLayout
                 android:id="@+id/breakdownCard"
+                android:layout_marginTop="19dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
@@ -325,7 +298,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="0dp"
                         android:text="@string/profile_breakdown_title"
                         android:textColor="@color/laya_text"
                         android:textSize="20sp"
@@ -334,7 +307,9 @@
                     <include layout="@layout/view_sentence_breakdown"/>
                 </LinearLayout>
             </FrameLayout>
-            <include layout="@layout/view_deduction_dates"/>
+            <!-- Card shadow insets supply the same 32dp visible gap as the cards above. -->
+            <include layout="@layout/view_deduction_dates" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginHorizontal="-16dp"/>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

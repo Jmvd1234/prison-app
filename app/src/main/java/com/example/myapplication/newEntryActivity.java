@@ -642,7 +642,7 @@ public class newEntryActivity extends AppCompatActivity {
             triggerController.writeToProfile(profile);
             profile.charges = additionalChargesController.readCharges(profile);
             calculation =
-                    SentenceCalculator.calculate(ProfileCalculationMapper.from(profile, observation));
+                    SequentialSentencePlan.initialResult(profile, observation);
             if (!calculation.available) {
                 throw new IllegalArgumentException(calculation.problem);
             }

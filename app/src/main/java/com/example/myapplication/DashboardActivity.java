@@ -65,6 +65,12 @@ public class DashboardActivity extends AppCompatActivity {
     Profile_RecyclerViewAdapter adapter;
     private EntryDeletionViewModel entryDeletion;
     private AlertDialog deleteConfirmation;
+    private ProfileTransferViewModel transfer;
+    private AlertDialog importConfirmation;
+    private final androidx.activity.result.ActivityResultLauncher<String> exportFile=registerForActivityResult(
+            new androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream"),uri->transfer.exportTo(uri));
+    private final androidx.activity.result.ActivityResultLauncher<String[]> importFile=registerForActivityResult(
+            new androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),uri->transfer.readFrom(uri));
 
     Spinner sortDropdown;
     Spinner orderDropdown;
@@ -261,8 +267,67 @@ public class DashboardActivity extends AppCompatActivity {
         orderDropdown.setOnItemSelectedListener(
                 sortListener
         );
+        setupTransfer();
     }
 
+
+    private void setupTransfer(){
+        transfer=new ViewModelProvider(this).get(ProfileTransferViewModel.class);
+        adapter.setExportSelection(new Profile_RecyclerViewAdapter.ExportSelection(){
+            public boolean selecting(){return transfer.selecting();}
+            public boolean selected(int id){return transfer.selected().contains(id);}
+            public void toggle(int id,boolean selected){if(!transfer.isBusy()){transfer.select(id,selected);refreshTransfer();}}
+        });
+        findViewById(R.id.exportProfiles).setOnClickListener(v->{
+            if(!transfer.selecting()){transfer.setSelecting(true);refreshTransfer();return;}
+            if(transfer.selected().isEmpty())return;
+            transfer.beginExport(sp.getLong("currentUserID",-1));
+            exportFile.launch("Laya-profiles-"+LocalDate.now()+".laya");
+        });
+        findViewById(R.id.importProfiles).setOnClickListener(v->{
+            transfer.beginImport(sp.getLong("currentUserID",-1));importFile.launch(new String[]{"*/*"});
+        });
+        findViewById(R.id.selectAllProfiles).setOnClickListener(v->{
+            ArrayList<Integer> ids=new ArrayList<>();for(profileModel p:profileModels)ids.add(p.getProfileID());
+            transfer.selectAll(ids);refreshTransfer();
+        });
+        findViewById(R.id.cancelExport).setOnClickListener(v->{transfer.setSelecting(false);refreshTransfer();});
+        transfer.busy.observe(this,value->refreshTransfer());
+        transfer.message.observe(this,value->{if(value==null)return;transfer.message.setValue(null);refreshTransfer();
+            new MaterialAlertDialogBuilder(this).setMessage(value).setPositiveButton(android.R.string.ok,null).show();});
+        transfer.imported.observe(this,value->{if(Boolean.TRUE.equals(value)){transfer.imported.setValue(null);setUpProfileModels();}});
+        transfer.previewCount.observe(this,count->{
+            if(count==null||isFinishing()||importConfirmation!=null)return;
+            importConfirmation=new MaterialAlertDialogBuilder(this).setTitle("Import "+count+" profile"+(count==1?"":"s")+"?")
+                .setMessage("These profiles will be added to the current login profile. Existing entries will stay unchanged. Importing the same file again creates additional copies.")
+                .setNegativeButton(android.R.string.cancel,(d,w)->transfer.discardPreview())
+                .setPositiveButton("Import",(d,w)->transfer.confirmImport()).create();
+            importConfirmation.setOnCancelListener(d->transfer.discardPreview());
+            importConfirmation.setOnDismissListener(d->importConfirmation=null);importConfirmation.show();
+        });
+        getOnBackPressedDispatcher().addCallback(this,new androidx.activity.OnBackPressedCallback(true){
+            public void handleOnBackPressed(){
+                if(transfer.isBusy()){Toast.makeText(DashboardActivity.this,"Please wait for the transfer to finish.",Toast.LENGTH_SHORT).show();return;}
+                if(transfer.selecting()){transfer.setSelecting(false);refreshTransfer();}else finish();
+            }
+        });
+        refreshTransfer();
+    }
+    private void refreshTransfer(){
+        if(transfer==null)return;
+        boolean selecting=transfer.selecting(),busy=transfer.isBusy();int count=transfer.selected().size();
+        android.widget.TextView export=findViewById(R.id.exportProfiles);
+        export.setText(selecting?"Export ("+count+")":getString(R.string.export_profiles));
+        export.setEnabled(!busy&&(!selecting||count>0));
+        findViewById(R.id.importProfiles).setVisibility(selecting?View.GONE:View.VISIBLE);
+        findViewById(R.id.importProfiles).setEnabled(!busy);
+        findViewById(R.id.exportSelectionControls).setVisibility(selecting?View.VISIBLE:View.GONE);
+        findViewById(R.id.selectAllProfiles).setEnabled(!busy&&!profileModels.isEmpty());
+        findViewById(R.id.cancelExport).setEnabled(!busy);
+        findViewById(R.id.homeButton).setEnabled(!busy);
+        findViewById(R.id.transferProgress).setVisibility(busy?View.VISIBLE:View.GONE);
+        adapter.notifyDataSetChanged();
+    }
 
     // =========================================================
     // SPINNER SETUP
@@ -402,6 +467,15 @@ public class DashboardActivity extends AppCompatActivity {
                             );
 
 
+                    SequentialSentencePlan service=null;
+                    if(result.available && profile.charges.size()>1){
+                        service=new SequentialSentencePlan(profile);
+                        result=service.calculateAtDate(calculationDate);
+                    }
+                    String serviceAction=service!=null && calculationDate.isBefore(service.capDate)
+                            && service.stageAt(calculationDate).number<service.ordered.size()
+                            ? (result.minRemainingDays<=0 ? "Continue to next charge" : "") : result.actionText();
+
                     String minimumTimeRemaining =
                             "N/A";
 
@@ -483,7 +557,7 @@ public class DashboardActivity extends AppCompatActivity {
                                             ? result.maxRemainingDays
                                             : 0L,
 
-                                    result.actionText(),
+                                    serviceAction,
 
                                     profile.image_path
                             );
@@ -523,6 +597,8 @@ public class DashboardActivity extends AppCompatActivity {
                     );
 
 
+                    if(service!=null)model.setServiceChargeNumber(service.stageAt(calculationDate).number);
+
                     loadedModels.add(
                             model
                     );
@@ -556,6 +632,7 @@ public class DashboardActivity extends AppCompatActivity {
 
 
                     updateSort();
+                    refreshTransfer();
                 });
 
             }
@@ -970,6 +1047,7 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         dateObserver.stop();
+        if(importConfirmation!=null)importConfirmation.dismiss();
 
         /*
          * Any result from an older load should no longer

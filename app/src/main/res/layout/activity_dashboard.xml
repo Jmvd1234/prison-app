@@ -66,6 +66,33 @@
             android:layout_margin="5dp" />
     </LinearLayout>
     <LinearLayout
+        android:id="@+id/transferControls"
+        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingHorizontal="20dp"
+        app:layout_constraintTop_toBottomOf="@id/sortControls"
+        app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_max="440dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton android:id="@+id/exportProfiles" style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp"
+                android:text="@string/export_profiles" android:textAllCaps="false"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/importProfiles" style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/import_profiles" android:textAllCaps="false"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/exportSelectionControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/export_privacy" android:textSize="12sp" android:textColor="@color/laya_muted"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton android:id="@+id/selectAllProfiles" style="?attr/borderlessButtonStyle"
+                    android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/select_all_profiles" android:textAllCaps="false"/>
+                <com.google.android.material.button.MaterialButton android:id="@+id/cancelExport" style="?attr/borderlessButtonStyle"
+                    android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@android:string/cancel" android:textAllCaps="false"/>
+            </LinearLayout>
+        </LinearLayout>
+        <TextView android:id="@+id/transferProgress" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/transfer_working" android:textColor="@color/laya_label" android:paddingVertical="6dp" android:visibility="gone"/>
+    </LinearLayout>
+    <LinearLayout
         android:id="@+id/recyclerLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -76,7 +103,7 @@
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="10dp"
         android:layout_marginHorizontal="8dp"
-        app:layout_constraintTop_toBottomOf="@id/sortControls"
+        app:layout_constraintTop_toBottomOf="@id/transferControls"
         app:layout_constraintWidth_max="400dp">
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/profileRecyclerView"

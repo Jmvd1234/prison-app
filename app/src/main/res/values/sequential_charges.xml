@@ -1,0 +1,35 @@
+<resources>
+    <string name="service_add">Add Charge</string>
+    <string name="service_add_number">Add Charge #%1$d</string>
+    <string name="service_number">Charge #%1$d</string>
+    <string name="service_close">Close</string>
+    <string name="service_choose_term">Choose where the next charge starts. Both its minimum and maximum terms will be shown.</string>
+    <string name="service_minimum_length">Minimum charge length: %1$s</string>
+    <string name="service_maximum_length">Maximum charge length: %1$s</string>
+    <string name="service_add_minimum">Add Charge to Minimum</string>
+    <string name="service_add_maximum">Add Charge to Maximum</string>
+    <string name="service_minimum">Min. time served</string>
+    <string name="service_maximum">Max. time served</string>
+    <string name="service_cap">Actual custody limit</string>
+    <string name="service_cap_hint">Sequential simulation: allowances shorten each charge; this limit counts actual custody. It uses the longest maximum term, even when a minimum term is selected.</string>
+    <string name="service_previous_min">Charge #%1$d · Min. served</string>
+    <string name="service_previous_max">Charge #%1$d · Max. served</string>
+    <string name="service_endpoint_at_limit">The maximum endpoint reaches the custody limit. No further charge can start there.</string>
+    <string name="service_save_failed">Unable to add the charge: %1$s</string>
+    <color name="service_previous_minimum">#8F6B00</color>
+    <color name="service_previous_maximum">#7F2030</color>
+    <item name="serviceMinimumChoice" type="id"/>
+    <item name="serviceMaximumChoice" type="id"/>
+    <item name="serviceAddToMinimum" type="id"/>
+    <item name="serviceAddToMaximum" type="id"/>
+    <string name="service_limit_reached">actual custody limit reached.</string>
+    <string name="service_charges">Charges</string>
+    <string name="service_charges_total">Charges - %1$d total</string>
+    <string name="service_remove_charge">Remove charge %1$d and all later charges</string>
+    <string name="service_charge_number">Charge %1$d</string>
+    <string name="service_custom_end">Custom end date</string>
+    <string name="service_add_custom">Add Charge to Custom Date</string>
+    <string name="service_custom_hint">Choose when the current charge ends. The next charge starts on that date.</string>
+    <string name="open_detailed_breakdown">View Detailed Breakdown</string>
+    <item name="serviceAddToCustom" type="id"/>
+</resources>

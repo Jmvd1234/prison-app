@@ -40,7 +40,7 @@ public final class SentenceProjection {
         public final Kind kind;
         public final LocalDate date;
 
-        private Milestone(Kind kind, LocalDate date) {
+        Milestone(Kind kind, LocalDate date) {
             this.kind = kind;
             this.date = date;
         }
@@ -51,7 +51,7 @@ public final class SentenceProjection {
         public final List<LocalDate> dates;
         public final List<Milestone> milestones;
 
-        private Range(LocalDate start, LocalDate commitment, LocalDate minimum, LocalDate maximum,
+        Range(LocalDate start, LocalDate commitment, LocalDate minimum, LocalDate maximum,
                 LocalDate end, List<Milestone> milestones) {
             this.start = start;
             this.commitment = commitment;

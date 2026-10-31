@@ -101,7 +101,6 @@ public class TooltipFlowTest {
                 SystemClock.sleep(50);
             }
             assertTrue("Breakdown loaded",ready.get());
-            show(R.id.observationDateHelp,R.string.tooltip_observation);screenshot("04-observation-date-help");pressBack();
             show(R.id.releaseMarkersHelp,R.string.tooltip_markers);pressBack();
             show(R.id.monthlyDeductionHelp,R.string.tooltip_deductions);screenshot("05-deduction-help");pressBack();
         }
