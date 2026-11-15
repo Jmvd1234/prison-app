@@ -32,6 +32,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensions += "edition"
+    productFlavors {
+        create("full") {
+            dimension = "edition"
+            buildConfigField("boolean", "FREE_EDITION", "false")
+        }
+        create("free") {
+            dimension = "edition"
+            applicationIdSuffix = ".free"
+            versionNameSuffix = "-free"
+            buildConfigField("boolean", "FREE_EDITION", "true")
+        }
+    }
+
     signingConfigs {
         if (releaseSigningFile.isFile) {
             create("release") {
@@ -45,7 +59,22 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "ADS_TEST_MODE", "true")
+            resValue("string", "admob_app_id", "ca-app-pub-3940256099942544~3347511713")
+            resValue("string", "admob_rewarded_id", "ca-app-pub-3940256099942544/5224354917")
+            for (placement in listOf("home", "dashboard", "entry", "breakdown")) {
+                resValue("string", "admob_banner_" + placement, "ca-app-pub-3940256099942544/9214589741")
+            }
+        }
         release {
+            buildConfigField("boolean", "ADS_TEST_MODE", "false")
+            resValue("string", "admob_app_id", providers.gradleProperty("layaAdmobAppId").orElse("").get())
+            resValue("string", "admob_rewarded_id", providers.gradleProperty("layaRewardedId").orElse("").get())
+            for (placement in listOf("home", "dashboard", "entry", "breakdown")) {
+                resValue("string", "admob_banner_" + placement,
+                    providers.gradleProperty("layaBanner" + placement.replaceFirstChar { it.uppercase() } + "Id").orElse("").get())
+            }
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
@@ -76,10 +105,14 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
+        resValues = true
     }
 }
 
 dependencies {
+    "freeImplementation"("com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk:1.6.0")
+    "freeImplementation"("com.google.android.ump:user-messaging-platform:4.0.0")
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
@@ -108,6 +141,21 @@ val checkReleaseSigning by tasks.registering {
         if (!config.isFile) throw GradleException("Release signing is not configured. See RELEASE.md; debug builds still work.")
     }
 }
-tasks.matching { it.name == "packageRelease" || it.name == "signReleaseBundle" }.configureEach {
+tasks.matching { (it.name.startsWith("package") && it.name.endsWith("Release")) || (it.name.startsWith("sign") && it.name.endsWith("ReleaseBundle")) }.configureEach {
     dependsOn(checkReleaseSigning)
 }
+
+// A test APK can always be built. Production free releases require your own AdMob IDs.
+val adProperties = listOf("layaAdmobAppId", "layaRewardedId", "layaBannerHomeId",
+    "layaBannerDashboardId", "layaBannerEntryId", "layaBannerBreakdownId")
+val productionAdIds = adProperties.associateWith { providers.gradleProperty(it).orElse("").get() }
+val checkProductionAds by tasks.registering {
+    doLast {
+        for ((key, value) in productionAdIds) {
+            val pattern = if (key == "layaAdmobAppId") "ca-app-pub-[0-9]{16}~[0-9]{10}" else "ca-app-pub-[0-9]{16}/[0-9]{10}"
+            if (!value.matches(Regex(pattern)) || value.contains("3940256099942544"))
+                throw GradleException("Configure $key with your production AdMob ID. Use freeDebug for test ads; see FREE_VERSION.md.")
+        }
+    }
+}
+tasks.matching { it.name == "preFreeReleaseBuild" }.configureEach { dependsOn(checkProductionAds) }

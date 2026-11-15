@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Laya Free</string>
+    <string name="login_local_note">Case records are stored on this device. Ads use an internet connection and may collect device and advertising information. Case details are not sent in ad requests.</string>
+</resources>

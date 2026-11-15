@@ -1,0 +1,6 @@
+<resources>
+    <string name="free_unlock_slot">Unlock a slot</string>
+    <string name="free_slots_full">All profile slots are in use. Unlock another slot or delete a profile you no longer need.</string>
+    <string name="free_slot_status">%1$d of %2$d profiles used</string>
+    <item name="freeAdScreen" type="id"/>
+</resources>

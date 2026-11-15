@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {User.class, Profile.class, ProfileCharge.class, ProfileDeduction.class}, version=13)
+@Database(entities = {User.class, Profile.class, ProfileCharge.class, ProfileDeduction.class, ProfileSlotReward.class}, version=14)
 public abstract class AppDatabase extends RoomDatabase {
 
     // Keep existing accounts, entries, charges and photos when installing this update.

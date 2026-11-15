@@ -89,6 +89,7 @@
                     android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@android:string/cancel" android:textAllCaps="false"/>
             </LinearLayout>
         </LinearLayout>
+        <include layout="@layout/view_free_slots"/>
         <TextView android:id="@+id/transferProgress" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="@string/transfer_working" android:textColor="@color/laya_label" android:paddingVertical="6dp" android:visibility="gone"/>
     </LinearLayout>
@@ -98,7 +99,7 @@
         android:layout_height="0dp"
         android:gravity="center"
         android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/freeBannerPrimary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="10dp"
@@ -112,4 +113,6 @@
             android:paddingBottom="16dp"
             android:clipToPadding="false" />
     </LinearLayout>
+    <FrameLayout android:id="@+id/freeBannerPrimary" android:layout_width="0dp" android:layout_height="wrap_content" android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

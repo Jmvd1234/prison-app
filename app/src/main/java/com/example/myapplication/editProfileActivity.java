@@ -69,6 +69,7 @@ public class editProfileActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
 
         setContentView(R.layout.activity_edit_profile);
+        Edition.attach(this);
 
 
         layout =

@@ -607,6 +607,7 @@
                 android:paddingTop="22dp"
                 android:paddingRight="28dp"
                 android:paddingBottom="30dp"/>
+            <FrameLayout android:id="@+id/freeBannerPrimary" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone"/>
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

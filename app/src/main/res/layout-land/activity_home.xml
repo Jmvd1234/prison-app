@@ -153,6 +153,8 @@
                             android:stateListAnimator="@null" />
                     </LinearLayout>
                 </LinearLayout>
+                <include layout="@layout/view_free_slots"/>
+                <FrameLayout android:id="@+id/freeBannerPrimary" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone"/>
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -189,6 +191,7 @@
                         android:textSize="15sp"
                         android:visibility="gone"/>
                 </LinearLayout>
+                <FrameLayout android:id="@+id/freePrivacyFooter" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone"/>
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>

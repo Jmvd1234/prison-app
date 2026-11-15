@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Edition.routeLaunch(this)) return;
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override protected void onStart() {
         super.onStart();
+        if (BuildConfig.FREE_EDITION) return;
         // Selecting a profile is always a new session. Never reuse the previous owner here.
         getSharedPreferences("user_session", MODE_PRIVATE).edit().remove("currentUserID").apply();
         model.refresh();
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override protected void onResume() {
         super.onResume();
+        if (BuildConfig.FREE_EDITION) return;
         // Results that arrived while paused are consumed only once the picker is visible.
         findViewById(R.id.main).post(() -> consumeResult(model.current()));
     }

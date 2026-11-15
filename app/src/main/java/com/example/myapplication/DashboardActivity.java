@@ -268,6 +268,7 @@ public class DashboardActivity extends AppCompatActivity {
                 sortListener
         );
         setupTransfer();
+        Edition.attach(this);
     }
 
 
@@ -298,8 +299,18 @@ public class DashboardActivity extends AppCompatActivity {
         transfer.imported.observe(this,value->{if(Boolean.TRUE.equals(value)){transfer.imported.setValue(null);setUpProfileModels();}});
         transfer.previewCount.observe(this,count->{
             if(count==null||isFinishing()||importConfirmation!=null)return;
+            if (BuildConfig.FREE_EDITION && count > profileDao.availableProfileSlots()) {
+                long available = profileDao.availableProfileSlots();
+                transfer.discardPreview();
+                new MaterialAlertDialogBuilder(this).setTitle("More profile slots needed")
+                    .setMessage("This backup contains " + count + " profiles, but only " + available
+                        + " slots are available. Unlock more slots, delete profiles you no longer need, or export a smaller backup. Nothing has been imported.")
+                    .setPositiveButton("Unlock a slot", (d, w) -> Edition.unlock(this))
+                    .setNegativeButton(android.R.string.cancel, null).show();
+                return;
+            }
             importConfirmation=new MaterialAlertDialogBuilder(this).setTitle("Import "+count+" profile"+(count==1?"":"s")+"?")
-                .setMessage("These profiles will be added to the current login profile. Existing entries will stay unchanged. Importing the same file again creates additional copies.")
+                .setMessage(BuildConfig.FREE_EDITION ? "These profiles will use available slots. Existing entries will stay unchanged. Importing the same file again creates additional copies." : "These profiles will be added to the current login profile. Existing entries will stay unchanged. Importing the same file again creates additional copies.")
                 .setNegativeButton(android.R.string.cancel,(d,w)->transfer.discardPreview())
                 .setPositiveButton("Import",(d,w)->transfer.confirmImport()).create();
             importConfirmation.setOnCancelListener(d->transfer.discardPreview());

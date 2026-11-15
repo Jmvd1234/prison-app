@@ -279,6 +279,7 @@
                 android:textColor="@color/laya_text"
                 android:textSize="16sp"
                 tools:visibility="gone"/>
+            <FrameLayout android:id="@+id/freeBannerPrimary" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone"/>
             <FrameLayout
                 android:id="@+id/breakdownCard"
                 android:layout_marginTop="19dp"
@@ -311,6 +312,7 @@
             <!-- Card shadow insets supply the same 32dp visible gap as the cards above. -->
             <include layout="@layout/view_deduction_dates" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginHorizontal="-16dp"/>
+            <FrameLayout android:id="@+id/freeBannerSecondary" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone"/>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

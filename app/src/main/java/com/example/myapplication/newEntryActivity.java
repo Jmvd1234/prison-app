@@ -73,6 +73,7 @@ public class newEntryActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
 
         setContentView(R.layout.activity_new_entry);
+        Edition.attach(this);
 
 
         layout = findViewById(R.id.main);
@@ -267,7 +268,7 @@ public class newEntryActivity extends AppCompatActivity {
         saveEntryButton.setOnClickListener(v -> {
 
             try {
-                saveProfile();
+                Edition.newEntry(this, this::saveProfile);
             } catch (IllegalArgumentException error) {
                 Snackbar.make(layout, error.getMessage() == null
                         ? "Check the entered numbers and dates." : error.getMessage(),

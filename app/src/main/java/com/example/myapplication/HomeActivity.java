@@ -43,6 +43,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
+        Edition.attach(this);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -67,13 +68,14 @@ public class HomeActivity extends AppCompatActivity {
             renderAbout();
         });
         homeBackButton = findViewById(R.id.homeBackButton);
+        if (BuildConfig.FREE_EDITION) homeBackButton.setVisibility(View.GONE);
         homeBackButton.setContentDescription(getString(R.string.login_switch_profile));
         homeBackButton.setOnClickListener(this::logOut);
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { logOut(null); }
         });
         String profileName = getIntent().getStringExtra(EXTRA_LOGIN_NAME);
-        if (profileName != null) {
+        if (profileName != null && !BuildConfig.FREE_EDITION) {
             TextView label = findViewById(R.id.homeLoginProfileName);
             label.setText(profileName);
             label.setVisibility(View.VISIBLE);
@@ -96,10 +98,11 @@ public class HomeActivity extends AppCompatActivity {
 
     public void make_new_entry(View v){
         Intent i = new Intent(this, newEntryActivity.class);
-        newEntryLauncher.launch(i);
+        Edition.newEntry(this, () -> newEntryLauncher.launch(i));
     }
 
     public void logOut(View v){
+        if (BuildConfig.FREE_EDITION) { finish(); return; }
         getSharedPreferences("user_session", MODE_PRIVATE)
                 .edit()
                 .remove("currentUserID")

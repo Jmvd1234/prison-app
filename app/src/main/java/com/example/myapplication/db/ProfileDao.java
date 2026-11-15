@@ -12,6 +12,29 @@ import java.util.List;
 
 @Dao
 public abstract class ProfileDao {
+    public static final class SlotLimitException extends IllegalStateException {
+        public SlotLimitException() { super("Not enough unlocked profile slots. Unlock more slots or delete an existing profile, then try again."); }
+    }
+    @Query("SELECT COUNT(*) FROM Profile") public abstract int countSavedProfiles();
+    @Query("SELECT COUNT(*) FROM Profile") public abstract androidx.lifecycle.LiveData<Integer> observeSavedProfileCount();
+    @Query("SELECT COUNT(*) FROM ProfileSlotReward") public abstract androidx.lifecycle.LiveData<Integer> observeSlotRewardCount();
+    @Query("SELECT COUNT(*) FROM ProfileSlotReward") public abstract int countSlotRewards();
+    @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
+    protected abstract long insertSlotReward(ProfileSlotReward reward);
+
+    @Transaction public boolean grantProfileSlot(String token) {
+        if (token == null || token.trim().isEmpty()) throw new IllegalArgumentException("Missing reward token.");
+        ProfileSlotReward reward = new ProfileSlotReward();
+        reward.token = token; reward.earnedAt = System.currentTimeMillis();
+        return insertSlotReward(reward) != -1;
+    }
+    public long profileSlotCapacity() { return 1L + countSlotRewards(); }
+    public long availableProfileSlots() { return Math.max(0L, profileSlotCapacity() - countSavedProfiles()); }
+    public void requireProfileSlots(int count) {
+        if (count < 0) throw new IllegalArgumentException("Invalid profile count.");
+        if (com.example.myapplication.BuildConfig.FREE_EDITION && count > availableProfileSlots()) throw new SlotLimitException();
+    }
+
     @Insert protected abstract long insertProfileRow(Profile profile);
     @Update protected abstract int updateProfileRow(Profile profile);
     @Insert protected abstract void insertChargeRows(List<ProfileCharge> charges);
@@ -49,6 +72,7 @@ public abstract class ProfileDao {
 
     @Transaction
     public long insertProfile(Profile profile) {
+        requireProfileSlots(1);
         com.example.myapplication.ClemencyAssessment.validate(profile);
         List<ProfileCharge> charges = snapshot(profile);
         refreshServiceLimit(profile);
@@ -132,6 +156,7 @@ public abstract class ProfileDao {
     /** Restore copies with fresh IDs, charges and deductions in one transaction. */
     @Transaction
     public void importProfiles(List<Profile> profiles,long owner) {
+        requireProfileSlots(profiles.size());
         for(Profile profile:profiles) {
             profile.profileID=0;profile.userID=owner;
             int id=Math.toIntExact(insertProfile(profile));

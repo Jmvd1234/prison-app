@@ -95,7 +95,7 @@ public final class ProfilePhotoViewModel extends AndroidViewModel {
                 main.post(() -> {
                     if (cleared) return;
                     publish(current.path, false);
-                    error.setValue(R.string.profile_save_failed);
+                    error.setValue(failure instanceof ProfileDao.SlotLimitException ? R.string.free_slots_full : R.string.profile_save_failed);
                 });
                 return;
             }

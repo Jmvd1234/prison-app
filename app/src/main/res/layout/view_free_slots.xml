@@ -1,0 +1,10 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/freeSlotsPanel" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8dp"
+    android:paddingHorizontal="12dp" android:background="@drawable/laya_summary_box" android:visibility="gone">
+    <TextView android:id="@+id/freeSlotStatus" android:layout_width="0dp" android:layout_weight="1"
+        android:layout_height="wrap_content" android:paddingVertical="8dp" android:textSize="13sp" android:textColor="@color/laya_label"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/freeUnlockSlot" style="?attr/borderlessButtonStyle"
+        android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/free_unlock_slot"
+        android:textAllCaps="false" android:textSize="13sp"/>
+</LinearLayout>
