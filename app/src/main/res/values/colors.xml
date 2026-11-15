@@ -16,6 +16,9 @@
     <color name="laya_muted">#6B7280</color>
     <color name="laya_divider">#F3F4F6</color>
     <color name="laya_summary">#F0F8FF</color>
+    <color name="laya_served_surface">#ECF7F5</color>
+    <color name="laya_served_text">#17675F</color>
+    <color name="laya_served_border">#BBDDD6</color>
     <color name="laya_warning_surface">#FFF8DC</color>
     <color name="laya_warning_text">#996F00</color>
     <color name="laya_warning_border">#4DF5C518</color>

@@ -26,7 +26,7 @@ public final class AddServiceChargeDialog extends DialogFragment {
         args.putBoolean("canMin",plan.active().minimum.isBefore(plan.capDate));
         args.putBoolean("canMax",plan.active().maximum.isBefore(plan.capDate));
         args.putString("earliest",plan.active().start.toString());
-        args.putString("latest",plan.active().maximum.toString());
+        args.putString("latest",plan.capDate.minusDays(1).toString());
         args.putString("expected",plan.choices);
         dialog.setArguments(args);return dialog;
     }
@@ -62,6 +62,8 @@ public final class AddServiceChargeDialog extends DialogFragment {
         MaterialButton custom=new MaterialButton(requireContext());
         custom.setId(R.id.serviceAddToCustom);custom.setText(R.string.service_add_custom);custom.setAllCaps(false);
         custom.setOnClickListener(v->showCustomPicker());body.addView(custom);
+        TextView customHint=new TextView(requireContext());customHint.setText(R.string.service_custom_hint);
+        customHint.setTextSize(12);body.addView(customHint);
         if(!args.getBoolean("canMax")){TextView cap=new TextView(requireContext());cap.setText(R.string.service_endpoint_at_limit);body.addView(cap);}
         android.widget.ScrollView scroll=new android.widget.ScrollView(requireContext());scroll.addView(body);
         return new MaterialAlertDialogBuilder(requireContext()).setView(scroll).create();

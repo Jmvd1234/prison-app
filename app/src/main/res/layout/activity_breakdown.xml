@@ -59,6 +59,7 @@
                 android:visibility="gone"
                 tools:text="Alex Rivera"
                 tools:visibility="visible"/>
+            <include layout="@layout/view_clemency_banner"/>
             <LinearLayout
                 android:id="@+id/breakdownPreviewControls"
                 android:layout_width="match_parent"

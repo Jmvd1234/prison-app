@@ -22,6 +22,9 @@ final class ProfileTransferCodec {
         w.name("commitmentDate").value(p.commitmentDate);
         w.name("prisonTransferDate").value(p.prisonTransferDate);
         w.name("serviceChoices").value(p.serviceChoices);
+        w.name("considerAllowancesInServiceLimit").value(p.considerAllowancesInServiceLimit);
+        w.name("convicted").value(p.convicted);
+        w.name("clemencyCategory").value(p.clemencyCategory);
         w.name("convictionDate").value(p.convictionDate);
         w.name("sentenceServiceStartDate").value(p.sentenceServiceStartDate);
         w.name("imprisonmentStartDate").value(p.imprisonmentStartDate);
@@ -56,6 +59,9 @@ final class ProfileTransferCodec {
                 case "commitmentDate":p.commitmentDate=text(r);break;
                 case "prisonTransferDate":p.prisonTransferDate=text(r);break;
                 case "serviceChoices":p.serviceChoices=text(r);break;
+                case "considerAllowancesInServiceLimit":p.considerAllowancesInServiceLimit=r.nextBoolean();break;
+                case "convicted":p.convicted=r.nextBoolean();break;
+                case "clemencyCategory":p.clemencyCategory=text(r);break;
                 case "convictionDate":p.convictionDate=text(r);break;
                 case "sentenceServiceStartDate":p.sentenceServiceStartDate=text(r);break;
                 case "imprisonmentStartDate":p.imprisonmentStartDate=text(r);break;
@@ -89,17 +95,22 @@ final class ProfileTransferCodec {
             }
         }r.endObject();
         if(r.peek()!=android.util.JsonToken.END_DOCUMENT)throw new IOException("Unexpected data after profile.");
-        if(fields.size()!=23)throw new IOException("Missing profile fields.");
+        // Old backups lack the new setting and receive the new enabled default.
+        boolean clemencyFields=fields.contains("convicted");
+        if(clemencyFields!=fields.contains("clemencyCategory"))throw new IOException("Missing clemency fields.");
+        int expected=23+(fields.contains("considerAllowancesInServiceLimit")?1:0)+(clemencyFields?2:0);
+        if(fields.size()!=expected)throw new IOException("Missing profile fields.");
+        if(clemencyFields&&p.clemencyCategory==null)throw new IOException("Missing clemency category.");
         if(!fields.contains("charges")||!fields.contains("deductions")||p.charges.isEmpty())throw new IOException("Missing charge or deduction data.");
         if(p.firstName==null||p.firstName.trim().isEmpty()||p.lastName==null||p.lastName.trim().isEmpty())throw new IOException("Missing profile name.");
         p.charges.get(0).fillFirstFormRow(p);
         try {
+            ClemencyAssessment.validate(p);
             LocalDate anchor=SentenceCalculator.requiredDate(ProfileCalculationMapper.commitmentDate(p),"Commitment date");
             SentenceCalculator.Result calculation=SentenceCalculator.calculatePreview(ProfileCalculationMapper.from(p,anchor));
             if(!calculation.available)throw new IOException("Invalid calculation data: "+calculation.problem);
             SequentialSentencePlan plan=new SequentialSentencePlan(p);
-            if(plan.stages.size()!=SequentialSentencePlan.decodeChoices(p.serviceChoices).size()+1)
-                throw new IOException("Charge choices continue beyond the custody limit.");
+            // Retain inactive saved choices when this mode reaches the limit earlier.
             p.maximumTotalServiceDays=plan.capDays;
         }catch(IllegalArgumentException|java.time.DateTimeException|ArithmeticException e){throw new IOException("Invalid profile dates or charges.",e);}
         return p;

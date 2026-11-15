@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="convicted">Convicted</string>
+    <string name="convicted_help">Confirm that the conviction is final, based on the court record. Prison commitment alone does not establish finality. Selecting this switch does not change custody dates or start a new time-served clock.</string>
+    <string name="clemency_category_title">Executive Clemency — Commutation Category</string>
+    <string name="trigger_warning_clemency">The court record MUST show a final conviction and establish the circumstances for the selected executive clemency category.
+
+If the court record does not show this or you do not know the content of the court record, DO NOT SELECT A CATEGORY.</string>
+    <string name="clemency_help">Select a court-record-confirmed category to estimate when the minimum service period for commutation review is reached. Commutation is a form of executive clemency; this reminder does not guarantee eligibility, approval or release.
+
+If more than one category appears applicable, have counsel or the BPP confirm the applicable category.
+
+The period uses the existing Actual Time Served counter, including recorded custody before conviction. The shared time-allowance switch controls whether net allowances count. Confirm the custody credits against the official records.
+
+These six categories follow BPP Resolution 24-4-10, Section 4(A)(3)–(8). Other clemency routes are not assessed here. None means no category has been selected; it does not mean the person is ineligible.</string>
+    <string-array name="clemency_categories">
+        <item>None</item>
+        <item>10 years — One reclusion perpetua or life imprisonment sentence
+For crimes/offences not punished under RA 7659 and other special laws. Section 4(A)(3).</item>
+        <item>13 years — Terms adjusted to 40 years under Article 70
+Indeterminate and/or definite prison terms adjusted to a definite 40-year term. Section 4(A)(4).</item>
+        <item>15 years — One reclusion perpetua or life imprisonment sentence for heinous offences
+Under RA 7659 or other special laws, committed on or after 1 January 1994. Section 4(A)(5).</item>
+        <item>18 years — Reclusion perpetua or life imprisonment for specified offences
+RA 6425 (as amended), RA 9165, kidnapping for ransom, terrorism, plunder or transnational crimes. Section 4(A)(6).</item>
+        <item>20 years — Two or more reclusion perpetua or life imprisonment sentences
+Including sentences adjusted to 40 years under Article 70. Section 4(A)(7).</item>
+        <item>25 years — Original death sentence reduced or commuted
+Automatically reduced or commuted to reclusion perpetua or life imprisonment. Section 4(A)(8).</item>
+    </string-array>
+    <string name="clemency_marker">Clemency review</string>
+    <string name="clemency_banner_title">Executive clemency review threshold reached.</string>
+    <string name="clemency_banner_body">The calculated service period for the selected category has been reached. Seek review for commutation of sentence.</string>
+    <string name="clemency_action">Apply For Executive Clemency</string>
+    <color name="clemency_marker">#7650A5</color>
+    <color name="clemency_warning_background">#FFF0F0</color>
+    <item name="timelineClemencyLabel" type="id"/>
+</resources>

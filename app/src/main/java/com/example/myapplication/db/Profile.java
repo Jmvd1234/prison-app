@@ -50,6 +50,12 @@ public class Profile {
     public String serviceChoices = "";
     @androidx.room.ColumnInfo(defaultValue = "0")
     public long maximumTotalServiceDays;
+    @androidx.room.ColumnInfo(defaultValue = "1")
+    public boolean considerAllowancesInServiceLimit = true;
+    @androidx.room.ColumnInfo(defaultValue = "0")
+    public boolean convicted;
+    @androidx.room.ColumnInfo(defaultValue = "'NONE'")
+    public String clemencyCategory = "NONE";
 
     public boolean notCommittedToJail;
     public boolean disqualifiedForCPI;

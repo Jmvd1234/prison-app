@@ -29,7 +29,11 @@
     <string name="service_charge_number">Charge %1$d</string>
     <string name="service_custom_end">Custom end date</string>
     <string name="service_add_custom">Add Charge to Custom Date</string>
-    <string name="service_custom_hint">Choose when the current charge ends. The next charge starts on that date.</string>
+    <string name="service_custom_hint">The next charge starts on this date. It may be after the current maximum, but must be before the service limit.</string>
+    <string name="service_consider_allowances">Include Time Allowances In Time Served Calculations</string>
+    <string name="service_limit_mode_hint">Count net time allowances toward the threefold or 40 year limit and executive clemency review.</string>
+    <string name="service_limit_mode_failed">Unable to save the time allowance setting. Please try again.</string>
+    <string name="service_limit_charges_blocked">%1$s, no more charges can be added</string>
     <string name="open_detailed_breakdown">View Detailed Breakdown</string>
     <item name="serviceAddToCustom" type="id"/>
 </resources>

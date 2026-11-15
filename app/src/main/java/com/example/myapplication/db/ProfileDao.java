@@ -49,6 +49,7 @@ public abstract class ProfileDao {
 
     @Transaction
     public long insertProfile(Profile profile) {
+        com.example.myapplication.ClemencyAssessment.validate(profile);
         List<ProfileCharge> charges = snapshot(profile);
         refreshServiceLimit(profile);
         long id = insertProfileRow(profile);
@@ -58,8 +59,10 @@ public abstract class ProfileDao {
 
     @Transaction
     public void updateUser(Profile profile) {
+        com.example.myapplication.ClemencyAssessment.validate(profile);
         List<ProfileCharge> charges = snapshot(profile);
         Profile previous=getProfileByProfileID(profile.profileID);
+        if(previous!=null)profile.considerAllowancesInServiceLimit=previous.considerAllowancesInServiceLimit;
         if(previous!=null && !com.example.myapplication.SequentialSentencePlan.signature(previous).equals(
                 com.example.myapplication.SequentialSentencePlan.signature(profile))) profile.serviceChoices="";
         else if(previous!=null) profile.serviceChoices=previous.serviceChoices;
@@ -157,6 +160,21 @@ public abstract class ProfileDao {
         catch(IllegalArgumentException | java.time.DateTimeException | ArithmeticException invalidDraft) {
             profile.maximumTotalServiceDays=0; // Legacy incomplete entries are still editable.
         }
+    }
+
+    @Query("UPDATE Profile SET considerAllowancesInServiceLimit = :enabled WHERE profileID = :id AND userID = :owner")
+    protected abstract int updateServiceLimitMode(int id,long owner,boolean enabled);
+
+    @Transaction
+    public Profile setServiceLimitMode(int id,long owner,boolean enabled) {
+        Profile profile=getProfileByProfileID(id);
+        if(profile==null||profile.userID!=owner)throw new IllegalStateException("Profile no longer available.");
+        profile.considerAllowancesInServiceLimit=enabled;
+        // Validate the recalculated route before persisting. Choices beyond an earlier
+        // cutoff remain saved so switching back can restore them.
+        new com.example.myapplication.SequentialSentencePlan(profile);
+        if(updateServiceLimitMode(id,owner,enabled)!=1)throw new IllegalStateException("Profile no longer available.");
+        return getProfileByProfileID(id);
     }
 
     @Delete public abstract void deleteUser(Profile profile);

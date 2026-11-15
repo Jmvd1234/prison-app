@@ -46,6 +46,7 @@ public class BreakdownActivity extends AppCompatActivity {
     private DeductionDatesController deductions;
     private SentenceProjection.Range range;
     private SequentialSentencePlan servicePlan;
+    private ClemencyAssessment clemency;
     private boolean serviceSaving, autoPrompted, selectNewCharge, openingChargeChecked, tutorialChecked;
 
     private LocalDate selectedDate, projectionToday;
@@ -154,11 +155,13 @@ public class BreakdownActivity extends AppCompatActivity {
         projectionToday = today;
         dateSlider.setEnabled(false);
         observationDate.setEnabled(false);
+        findViewById(R.id.considerAllowancesInServiceLimit).setEnabled(false);
         executor.execute(() -> {
             Profile saved;
             SequentialSentencePlan plan=null;
             SentenceProjection.Range calculatedRange=null;
             SentenceCalculator.Result current=null;
+            ClemencyAssessment assessed=null;
             String problem=null;
             try {
                 saved=com.example.myapplication.db.AppDatabase.getInstance(this).ProfileDao().getProfileByProfileID(requested.profileID);
@@ -171,7 +174,12 @@ public class BreakdownActivity extends AppCompatActivity {
                     current=SentenceCalculator.calculate(ProfileCalculationMapper.from(saved,today));
                     if(current.available)calculatedRange=SentenceProjection.create(saved,today);
                 }
+                if(current!=null && current.available){
+                    assessed=ClemencyAssessment.create(saved,plan);
+                    calculatedRange=assessed.addTo(calculatedRange);
+                }
             }catch(RuntimeException error){saved=requested;problem=error.getMessage();}
+            final ClemencyAssessment completedClemency=assessed;
             final Profile loaded=saved;
             final SequentialSentencePlan completedPlan=plan;
             final SentenceCalculator.Result completedCurrent=current;
@@ -193,6 +201,7 @@ public class BreakdownActivity extends AppCompatActivity {
                 }
                 profile=loaded;
                 servicePlan=completedPlan;
+                clemency=completedClemency;
                 range = completedRange;
                 bindChargeGrid();
                 findViewById(R.id.serviceAddCharge).setVisibility(View.VISIBLE);
@@ -224,7 +233,7 @@ public class BreakdownActivity extends AppCompatActivity {
                 zoomScroll.configure(range.dates.size()-1,()->zoomLevel.setText(zoomScroll.getZoom()<=1.001f?getString(R.string.timeline_full):getString(R.string.timeline_zoom_level,zoomScroll.getZoom())));
                 previewControls.setVisibility(View.VISIBLE);
                 // Read the latest selection: a restored picker may confirm while this work runs.
-                LocalDate preview = selectNewCharge?selectionFloor():followToday ? today : selectedDate;
+                LocalDate preview = selectNewCharge&&servicePlan!=null?servicePlan.active().start:followToday ? today : selectedDate;
                 if(selectNewCharge){selectNewCharge=false;followToday=false;}
                 selectDate(preview != null && range.dates.contains(preview) ? preview : today);
                 showOpeningDialogs();
@@ -289,6 +298,7 @@ public class BreakdownActivity extends AppCompatActivity {
             LocalDate date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate();
             if (range != null && !range.dates.contains(date)) return;
             selectedDate = date;
+        findViewById(R.id.clemencyBanner).setVisibility(clemency!=null && clemency.reached(date) ? View.VISIBLE : View.GONE);
             followToday = date.equals(LocalDate.now());
             if (range != null && observationDate.isEnabled()) selectDate(date);
         });
@@ -315,6 +325,7 @@ public class BreakdownActivity extends AppCompatActivity {
 
     private void renderDate(LocalDate date) {
         selectedDate = date;
+        findViewById(R.id.clemencyBanner).setVisibility(clemency!=null && clemency.reached(date) ? View.VISIBLE : View.GONE);
         if (deductions != null) deductions.setObservationDate(date);
         SentenceCalculator.Result result = servicePlan==null?SentenceCalculator.calculatePreview(ProfileCalculationMapper.from(profile, date)):servicePlan.calculate(date);
         observationDate.setText(getString(date.equals(LocalDate.now())
@@ -328,8 +339,15 @@ public class BreakdownActivity extends AppCompatActivity {
         observationDate.setEnabled(range != null);
         findViewById(R.id.breakdownObservationRow).setVisibility(View.VISIBLE);
         findViewById(R.id.serviceChargesSection).setVisibility(View.VISIBLE);
-        ((TextView)findViewById(R.id.serviceChargesHeading)).setText(
+        android.text.SpannableStringBuilder heading=new android.text.SpannableStringBuilder(
                 getString(R.string.service_charges_total, profile.charges.size()));
+        if(servicePlan!=null&&!servicePlan.finalCharge()&&!servicePlan.hasNext(date)){
+            int warningStart=heading.length();
+            heading.append("  ").append(getString(R.string.service_limit_charges_blocked,servicePlan.limitReachedText()));
+            heading.setSpan(new android.text.style.ForegroundColorSpan(getColor(R.color.laya_danger)),
+                    warningStart,heading.length(),android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        ((TextView)findViewById(R.id.serviceChargesHeading)).setText(heading);
         if (!result.available) {
             releaseDates.setVisibility(View.GONE);
             breakdownCard.setVisibility(View.GONE);
@@ -346,8 +364,7 @@ public class BreakdownActivity extends AppCompatActivity {
         timeline.setOverdueStart(servicePlan==null?range.maximumCompletion:servicePlan.overdueStart(date));
         timeline.setLimitRelevant(servicePlan!=null&&servicePlan.limitRelevant(date));
         timeline.setPreview(date, dates);
-        boolean limited=servicePlan!=null&&servicePlan.limitRelevant(date);
-        findViewById(R.id.serviceLimitMessage).setVisibility(limited?View.VISIBLE:View.GONE);
+        findViewById(R.id.serviceLimitMessage).setVisibility(View.GONE);
         findViewById(R.id.serviceAddCharge).setEnabled(!serviceSaving&&servicePlan!=null&&servicePlan.hasNext(date));
         // Release dates stay pinned at their first zero; balances keep counting with earned credits.
         Bundle values = BreakdownViewBinder.createArguments(
@@ -355,11 +372,18 @@ public class BreakdownActivity extends AppCompatActivity {
                 getString(R.string.breakdown_balance_value, result.maximumText(date), result.maxRemainingDays),
                 result);
         BreakdownViewBinder.bind(breakdownCard, values);
+        ServiceLimitSettings.bind(this,breakdownCard,profile,()->{
+            serviceSaving=true;dateSlider.setEnabled(false);observationDate.setEnabled(false);
+            findViewById(R.id.serviceAddCharge).setEnabled(false);
+        },loaded->{
+            serviceSaving=false;profile=loaded;followToday=false;prepareProjection();
+        });
         status.setVisibility(View.GONE);
         breakdownCard.setVisibility(View.VISIBLE);
     }
 
-    private LocalDate selectionFloor(){return servicePlan==null?range.start:servicePlan.active().start;}
+    // Rewinding previews the latest charge without changing saved earlier endpoints.
+    private LocalDate selectionFloor(){return range.start;}
 
     private LocalDate selectionCeiling(){
         // A remaining serviceable charge must be appended before previewing beyond
@@ -498,6 +522,7 @@ public class BreakdownActivity extends AppCompatActivity {
     }
 
     private void showError(String message) {
+        findViewById(R.id.clemencyBanner).setVisibility(View.GONE);
         observationDate.setEnabled(false);
         findViewById(R.id.deductionDatesPanel).setVisibility(View.GONE);
         releaseDates.setVisibility(View.GONE);

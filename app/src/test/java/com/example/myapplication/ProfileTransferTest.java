@@ -108,8 +108,12 @@ public class ProfileTransferTest {
     }
     @Test public void customPickerRestoresAndSubmitsItsDateAfterRotation(){
         Profile p=profile();p.serviceChoices="";SequentialSentencePlan plan=new SequentialSentencePlan(p);
+        checkCustomPickerAfterRotation(plan,plan.start);
+        checkCustomPickerAfterRotation(plan,plan.active().maximum.plusDays(45));
+    }
+    private void checkCustomPickerAfterRotation(SequentialSentencePlan plan,LocalDate selection){
         try(ActivityScenario<HomeActivity> scenario=ActivityScenario.launch(HomeActivity.class)){
-            scenario.onActivity(a->{AddServiceChargeDialog d=AddServiceChargeDialog.create(plan,plan.start);d.showNow(a.getSupportFragmentManager(),AddServiceChargeDialog.TAG);
+            scenario.onActivity(a->{AddServiceChargeDialog d=AddServiceChargeDialog.create(plan,selection);d.showNow(a.getSupportFragmentManager(),AddServiceChargeDialog.TAG);
                 d.requireDialog().findViewById(R.id.serviceAddToCustom).performClick();a.getSupportFragmentManager().executePendingTransactions();d.getChildFragmentManager().executePendingTransactions();});
             scenario.recreate();
             scenario.onActivity(a->{java.util.concurrent.atomic.AtomicReference<android.os.Bundle> result=new java.util.concurrent.atomic.AtomicReference<>();
@@ -117,8 +121,26 @@ public class ProfileTransferTest {
                 AddServiceChargeDialog d=(AddServiceChargeDialog)a.getSupportFragmentManager().findFragmentByTag(AddServiceChargeDialog.TAG);assertNotNull(d);
                 com.google.android.material.datepicker.MaterialDatePicker<?> picker=(com.google.android.material.datepicker.MaterialDatePicker<?>)d.getChildFragmentManager().findFragmentByTag("custom_end_date");assertNotNull(picker);
                 picker.requireDialog().findViewById(com.google.android.material.R.id.confirm_button).performClick();
-                assertNotNull(result.get());assertEquals(plan.start.toString(),result.get().getString("customDate"));});
+                assertNotNull(result.get());assertEquals(selection.toString(),result.get().getString("customDate"));});
         }
+    }
+    @Test public void delayedHandoffSurvivesDatabaseAndFileTransferAndCanBeRemoved()throws Exception{
+        Profile p=profile();p.serviceChoices="";int id=save(p);SequentialSentencePlan first=new SequentialSentencePlan(p);
+        LocalDate boundary=first.active().maximum.plusDays(45);
+        Profile saved=db.ProfileDao().advanceServiceCustom(id,source.userID,"",boundary,first.active().maximum);
+        SequentialSentencePlan next=new SequentialSentencePlan(saved);
+        assertEquals(boundary,next.active().start);
+        assertEquals(first.active().maximum,next.stages.get(0).maximum);
+        try(ProfileTransferArchive.Preview preview=ProfileTransferArchive.read(context,new ByteArrayInputStream(archive(id)))){
+            ProfileTransferArchive.restore(context,preview,target.userID);
+        }
+        Profile imported=db.ProfileDao().getProfilesByUserID(target.userID).get(0);
+        SequentialSentencePlan restored=new SequentialSentencePlan(imported);
+        assertEquals(next.choices,restored.choices);assertEquals(next.active().maximum,restored.active().maximum);
+        assertEquals(next.calculate(boundary).maxRemainingDays,restored.calculate(boundary).maxRemainingDays);
+        Profile undone=db.ProfileDao().removeServiceFrom(id,source.userID,saved.serviceChoices,2);
+        assertEquals("",undone.serviceChoices);
+        assertEquals(first.active().maximum,new SequentialSentencePlan(undone).active().maximum);
     }
     @Test public void pendingChargeMarkerIsCappedWithinFullRangeAfterPopupDismissal()throws Exception{
         Profile p=profile();p.serviceChoices="";int id=save(p);SequentialSentencePlan plan=new SequentialSentencePlan(p);

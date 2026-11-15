@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 
 public class SequentialSentencePlanTest {
     private Profile profile(int... lengths){
-        Profile p=new Profile();p.commitmentDate="2020-01-01";p.leaArrestDate="2020-01-01";
+        Profile p=new Profile();p.considerAllowancesInServiceLimit=false;p.commitmentDate="2020-01-01";p.leaArrestDate="2020-01-01";
         p.disqualifiedForCPI=true;p.disqualifiedForTimeAllowances=true;
         for(int i=0;i<lengths.length;i+=2){ProfileCharge c=new ProfileCharge();c.minDays=lengths[i];c.maxDays=lengths[i+1];c.position=i/2;p.charges.add(c);}
         return p;
@@ -108,7 +108,7 @@ public class SequentialSentencePlanTest {
         SequentialSentencePlan plan=new SequentialSentencePlan(p);
         assertTrue(plan.active().minimum.isBefore(plan.capDate));assertEquals(plan.capDate,plan.active().maximum);
         assertFalse(plan.hasNext());assertTrue(plan.limitRelevant(plan.active().start));
-        try{plan.appendChoice(false,false);fail();}catch(IllegalArgumentException expected){assertEquals("actual custody limit reached.",expected.getMessage());}
+        try{plan.appendChoice(false,false);fail();}catch(IllegalArgumentException expected){assertEquals("Threefold rule time reached",expected.getMessage());}
         assertEquals(plan.capDate,plan.overdueStart(plan.capDate.plusDays(10)));
     }
     @Test public void redStartsOnlyAfterFinalReleaseOrHardLimit(){
@@ -129,12 +129,66 @@ public class SequentialSentencePlanTest {
         assertEquals(boundary.plusDays(80),next.active().maximum);
         assertEquals("",next.choicesBefore(2));
     }
-    @Test public void customEndDateIncludesBothBoundsButRejectsOutsideThem(){
+    @Test public void customEndDateAllowsMaximumAndLaterButStopsBeforeCustodyCap(){
         Profile p=profile(100,200,30,80);SequentialSentencePlan plan=new SequentialSentencePlan(p);
         assertNotNull(plan.appendCustomDate(plan.active().start,plan.start));
         assertNotNull(plan.appendCustomDate(plan.active().maximum,plan.start));
-        for(LocalDate invalid:new LocalDate[]{plan.start.minusDays(1),plan.active().maximum.plusDays(1)}){
+        assertNotNull(plan.appendCustomDate(plan.active().maximum.plusDays(1),plan.start));
+        assertNotNull(plan.appendCustomDate(plan.capDate.minusDays(1),plan.start));
+        for(LocalDate invalid:new LocalDate[]{null,plan.start.minusDays(1),plan.capDate,plan.capDate.plusDays(1)}){
             try{plan.appendCustomDate(invalid,plan.start);fail();}catch(IllegalArgumentException expected){}
+        }
+    }
+    @Test public void lateCustomHandoffPreservesEarlierMaximumWithoutReusingDelayCredit(){
+        Profile p=profile(100,200,30,80,10,20);SequentialSentencePlan first=new SequentialSentencePlan(p);
+        LocalDate boundary=first.active().maximum.plusDays(35);
+        p.serviceChoices=first.appendCustomDate(boundary,first.active().maximum);
+        String custom=p.serviceChoices;SequentialSentencePlan second=new SequentialSentencePlan(p);
+        assertEquals(first.active().maximum,second.stages.get(0).maximum);
+        assertEquals(boundary,second.active().start);
+        assertEquals(30,second.calculate(boundary).minRemainingDays);
+        assertEquals(80,second.calculate(boundary).maxRemainingDays);
+        assertEquals(boundary.plusDays(30),second.active().minimum);
+        assertEquals(boundary.plusDays(80),second.active().maximum);
+        assertEquals(first.capDate,second.capDate);
+        assertFalse(second.range(first.start,true).end.isBefore(second.active().maximum));
+        p.serviceChoices=second.appendChoice(false,true);SequentialSentencePlan third=new SequentialSentencePlan(p);
+        assertEquals(second.active().maximum,third.active().start);
+        assertEquals(custom,third.choicesBefore(3));
+        p.serviceChoices=third.choicesBefore(2);
+        assertEquals(first.active().maximum,new SequentialSentencePlan(p).active().maximum);
+    }
+    @Test public void lateCustomHandoffCarriesAllowanceTierAndCumulativeCustody(){
+        Profile p=profile(500,1000,100,200);p.disqualifiedForCPI=false;p.disqualifiedForTimeAllowances=false;
+        SequentialSentencePlan first=new SequentialSentencePlan(p);LocalDate boundary=first.start.plusMonths(24);
+        assertTrue(boundary.isAfter(first.active().maximum));
+        p.serviceChoices=first.appendCustomDate(boundary,first.active().maximum);
+        SequentialSentencePlan next=new SequentialSentencePlan(p);
+        SentenceCalculator.Result atStart=next.calculate(boundary),later=next.calculate(boundary.plusMonths(1));
+        assertEquals(100,atStart.minRemainingDays);assertEquals(200,atStart.maxRemainingDays);
+        assertEquals(24,atStart.completedImprisonmentMonths);assertEquals(25,later.completedImprisonmentMonths);
+        assertEquals(SentenceCalculator.gctaRate(25),later.gctaDays-atStart.gctaDays);
+        assertEquals(first.calculate(boundary).netAllowanceDays,atStart.netAllowanceDays);
+        assertEquals(first.calculate(boundary).actualServiceDays,atStart.actualServiceDays);
+        long elapsed=java.time.temporal.ChronoUnit.DAYS.between(boundary,boundary.plusMonths(1));
+        assertEquals(200-elapsed-(later.netAllowanceDays-atStart.netAllowanceDays),later.maxRemainingDays);
+    }
+    @Test public void lateCustomHandoffClipsNextChargeAtRemainingCustodyLimit(){
+        Profile p=profile(100,200,30,80,10,20);SequentialSentencePlan first=new SequentialSentencePlan(p);
+        LocalDate boundary=first.capDate.minusDays(1);
+        p.serviceChoices=first.appendCustomDate(boundary,first.active().maximum);
+        SequentialSentencePlan next=new SequentialSentencePlan(p);
+        assertEquals(first.capDate,next.active().minimum);assertEquals(first.capDate,next.active().maximum);
+        assertEquals(1,next.calculate(boundary).maxRemainingDays);assertFalse(next.hasNext());
+        assertEquals(-5,next.calculate(next.capDate.plusDays(5)).maxRemainingDays);
+        assertEquals(next.capDate,next.overdueStart(next.capDate.plusDays(5)));
+        try{next.appendCustomDate(boundary,boundary);fail();}catch(IllegalArgumentException expected){}
+    }
+    @Test public void savedCustomDatesCannotRunBackwardsOrPastCustodyLimit(){
+        Profile p=profile(100,200,30,80);SequentialSentencePlan first=new SequentialSentencePlan(p);
+        for(LocalDate invalid:new LocalDate[]{first.start.minusDays(1),first.capDate,first.capDate.plusDays(1)}){
+            p.serviceChoices="v2:@"+invalid;
+            try{new SequentialSentencePlan(p);fail();}catch(IllegalArgumentException expected){}
         }
     }
     @Test public void customAndNormalChoicesCanBeMixedAndUndone(){

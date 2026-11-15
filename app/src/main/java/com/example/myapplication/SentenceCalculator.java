@@ -108,6 +108,9 @@ public final class SentenceCalculator {
         public final String problem;
         public final boolean effectiveTADisqualification;
         public final LocalDate sentenceAnchor;
+        public final LocalDate custodyStart;
+        // Cumulative custody across charges, excluding gaps; credits are net of deductions.
+        public final long actualTimeServedDays, timeServedWithAllowancesDays;
         // These are the website's before/after commitment intervals, not a finality determination.
         public final long actualPreventiveDays, actualServiceDays, creditedPreventiveFifths;
         public final long completedImprisonmentMonths, eligibleMonths;
@@ -126,6 +129,9 @@ public final class SentenceCalculator {
             problem = s.problem;
             effectiveTADisqualification = s.excluded;
             sentenceAnchor = s.anchor;
+            custodyStart = s.custodyStart;
+            actualTimeServedDays = s.actualTimeServed;
+            timeServedWithAllowancesDays = s.actualTimeServed + s.netAllowance;
             actualPreventiveDays = s.beforeCommitment;
             actualServiceDays = s.afterCommitment;
             creditedPreventiveFifths = s.beforeCommitment * 5L;
@@ -158,6 +164,9 @@ public final class SentenceCalculator {
             problem = source.problem;
             effectiveTADisqualification = source.effectiveTADisqualification;
             sentenceAnchor = source.sentenceAnchor;
+            custodyStart = source.custodyStart;
+            actualTimeServedDays = source.actualTimeServedDays;
+            timeServedWithAllowancesDays = source.timeServedWithAllowancesDays;
             actualPreventiveDays = source.actualPreventiveDays;
             actualServiceDays = source.actualServiceDays;
             creditedPreventiveFifths = source.creditedPreventiveFifths;
@@ -185,6 +194,14 @@ public final class SentenceCalculator {
             return available ? displayBalance(observation, minRemainingDays) : "N/A";
         }
 
+        public String actualTimeServedText() {
+            return available ? displayBalance(custodyStart, actualTimeServedDays) : "N/A";
+        }
+
+        public String timeServedWithAllowancesText() {
+            return available ? displayBalance(custodyStart, timeServedWithAllowancesDays) : "N/A";
+        }
+
         public String maximumText(LocalDate observation) {
             return available ? displayBalance(observation, maxRemainingDays) : "N/A";
         }
@@ -200,7 +217,8 @@ public final class SentenceCalculator {
     private static final class State {
         boolean available, excluded, prisonCommitment, hasTransfer, hasEarlierJail;
         String problem = "";
-        LocalDate anchor;
+        LocalDate anchor, custodyStart;
+        long actualTimeServed;
         int chargeCount, stalPercent;
         long beforeCommitment, afterCommitment, months, eligible, gcta, tastm, stal;
         long leaDays, jailDays, jailGcta, jailTastm;
@@ -254,6 +272,7 @@ public final class SentenceCalculator {
                     "Select None, 20%, or 40% STAL.");
 
             s.anchor = commitment;
+            s.custodyStart = arrest;
             boolean beforeCommitment = observation.isBefore(commitment);
             s.beforeCommitment = ChronoUnit.DAYS.between(arrest, beforeCommitment ? observation : commitment);
             s.afterCommitment = beforeCommitment ? 0 : ChronoUnit.DAYS.between(commitment, observation);
@@ -321,6 +340,8 @@ public final class SentenceCalculator {
                     s.afterCommitment), s.netAllowance);
             // Both website adjustments extend the balance; neither is clamped to credits.
             creditedDays = Math.subtractExact(creditedDays, in.timeGapDays);
+            s.actualTimeServed = Math.subtractExact(
+                    Math.addExact(s.beforeCommitment, s.afterCommitment), in.timeGapDays);
             s.minRemaining = Math.subtractExact(s.minSentence, creditedDays);
             s.maxRemaining = Math.subtractExact(s.maxSentence, creditedDays);
             // Reject overflow or dates the dashboard cannot represent.

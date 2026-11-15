@@ -22,6 +22,10 @@ public final class BreakdownViewBinder {
     private static final String ARG_STAL_DAYS = "stal_days";
     private static final String ARG_STAL_PERCENT = "stal_percent";
     private static final String ARG_DEDUCTIONS = "deduction_days";
+    private static final String ARG_ACTUAL_SERVED = "actual_served";
+    private static final String ARG_ACTUAL_SERVED_DAYS = "actual_served_days";
+    private static final String ARG_SERVED_WITH_ALLOWANCES = "served_with_allowances";
+    private static final String ARG_SERVED_WITH_ALLOWANCES_DAYS = "served_with_allowances_days";
 
     public static Bundle createArguments(String minimum, String maximum,
             SentenceCalculator.Result result) {
@@ -34,6 +38,10 @@ public final class BreakdownViewBinder {
         arguments.putLong(ARG_STAL_DAYS, result.stalDays);
         arguments.putInt(ARG_STAL_PERCENT, result.stalPercent);
         arguments.putLong(ARG_DEDUCTIONS, result.appliedDeductionDays);
+        arguments.putString(ARG_ACTUAL_SERVED, result.actualTimeServedText());
+        arguments.putLong(ARG_ACTUAL_SERVED_DAYS, result.actualTimeServedDays);
+        arguments.putString(ARG_SERVED_WITH_ALLOWANCES, result.timeServedWithAllowancesText());
+        arguments.putLong(ARG_SERVED_WITH_ALLOWANCES_DAYS, result.timeServedWithAllowancesDays);
         arguments.putBundle(ARG_LEA, stageArguments(breakdown.lea));
         arguments.putBundle(ARG_JAIL, stageArguments(breakdown.jail));
         arguments.putBundle(ARG_PRISON, stageArguments(breakdown.prison));
@@ -53,6 +61,10 @@ public final class BreakdownViewBinder {
     }
 
     public static void bind(View content, Bundle arguments) {
+        bindServed(content, R.id.actualTimeServedValue, arguments.getString(ARG_ACTUAL_SERVED),
+                arguments.getLong(ARG_ACTUAL_SERVED_DAYS));
+        bindServed(content, R.id.timeServedWithAllowancesValue, arguments.getString(ARG_SERVED_WITH_ALLOWANCES),
+                arguments.getLong(ARG_SERVED_WITH_ALLOWANCES_DAYS));
         bindBalance(content, R.id.minimumSentenceValue, arguments.getString(ARG_MINIMUM), arguments.getLong(ARG_MINIMUM_DAYS));
         bindBalance(content, R.id.maximumSentenceValue, arguments.getString(ARG_MAXIMUM), arguments.getLong(ARG_MAXIMUM_DAYS));
         NumberFormat numbers = NumberFormat.getIntegerInstance();
@@ -80,6 +92,13 @@ public final class BreakdownViewBinder {
         balance.setText(text);
         // XML state selectors restore the normal colors when the slider moves back before zero.
         balance.setActivated(remainingDays < 0);
+    }
+
+    private static void bindServed(View content, int id, String text, long days) {
+        TextView value = content.findViewById(id);
+        // A popup restored after an update may not have the new totals in its arguments.
+        value.setText(text == null ? content.getContext().getString(R.string.breakdown_unrecorded)
+                : content.getContext().getString(R.string.breakdown_balance_value, text, days));
     }
 
     private static void bindRow(View content, Bundle row, int rowLabel,

@@ -38,6 +38,8 @@ public final class TimelineMilestonesLayout extends ViewGroup {
     }
 
     private final List<Label> labels = new ArrayList<>();
+    private final List<Label> historyLabels = new ArrayList<>();
+    private List<SequentialSentencePlan.Stage> chargeStages = Collections.emptyList();
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path connector = new Path();
     private final int neutral, surface, minimumColor, maximumColor, halo;
@@ -52,26 +54,38 @@ public final class TimelineMilestonesLayout extends ViewGroup {
     public void setOverdueStart(LocalDate date){overdueStart=date;invalidate();}
     public void setChargeContext(SequentialSentencePlan plan){
         chargeNumber=plan==null?1:plan.active().number;
+        for(Label label:historyLabels){labels.remove(label);removeView(label.view);}
+        historyLabels.clear();
+        if(limitLabel!=null){labels.remove(limitLabel);removeView(limitLabel.view);}
+        chargeStages=plan==null?Collections.emptyList():plan.stages;
         limitLabel=null;
-        if(plan==null)return;
+        if(plan==null){requestLayout();invalidate();return;}
         limitLabel=new Label();limitLabel.date=limitLabel.displayedDate=plan.capDate;
         limitLabel.fraction=limitLabel.labelFraction=range.positionOf(plan.capDate);
         limitLabel.customColor=neutral;
         limitLabel.view=(TextView)LayoutInflater.from(getContext()).inflate(R.layout.view_timeline_milestone,this,false);
-        limitLabel.view.setText(getContext().getString(R.string.service_cap)+"\n"+plan.capDate.format(SentenceCalculator.DISPLAY_DATE));
+        limitLabel.view.setText(plan.limitReachedText()+"\n"+plan.capDate.format(SentenceCalculator.DISPLAY_DATE));
         limitLabel.view.setTextColor(neutral);
         limitLabel.view.setClickable(false);limitLabel.view.setFocusable(false);
         for(int i=1;i<plan.stages.size();i++){
             SequentialSentencePlan.Stage next=plan.stages.get(i);
-            Label label=new Label();label.date=label.displayedDate=next.start;label.reached=true;
-            label.fraction=label.labelFraction=range.positionOf(next.start);
-            label.customColor=ContextCompat.getColor(getContext(),next.previousMaximum?R.color.service_previous_maximum:R.color.service_previous_minimum);
-            label.view=(TextView)LayoutInflater.from(getContext()).inflate(R.layout.view_timeline_milestone,this,false);
-            label.view.setText(getContext().getString(next.previousCustom?R.string.service_custom_end:next.previousMaximum?R.string.service_maximum:R.string.service_minimum)+"\n"+next.start.format(SentenceCalculator.DISPLAY_DATE)+"\n"+getContext().getString(R.string.service_number,i));
-            label.view.setTextColor(label.customColor);label.view.setClickable(false);
-            labels.add(label);addView(label.view);
+            SequentialSentencePlan.Stage previous=plan.stages.get(i-1);
+            boolean delayed=next.previousCustom&&next.start.isAfter(previous.maximum);
+            // Keep the calculated maximum visible alongside a later custom handoff.
+            if(delayed)addHistoryLabel(previous.maximum,R.string.service_maximum,i,R.color.service_previous_maximum);
+            addHistoryLabel(next.start,next.previousCustom?R.string.service_custom_end:next.previousMaximum?R.string.service_maximum:R.string.service_minimum,
+                    i,next.previousMaximum||delayed?R.color.service_previous_maximum:R.color.service_previous_minimum);
         }
-        requestLayout();
+        requestLayout();invalidate();
+    }
+    private void addHistoryLabel(LocalDate date,int title,int number,int color){
+        Label label=new Label();label.date=label.displayedDate=date;label.reached=true;
+        label.fraction=label.labelFraction=range.positionOf(date);
+        label.customColor=ContextCompat.getColor(getContext(),color);
+        label.view=(TextView)LayoutInflater.from(getContext()).inflate(R.layout.view_timeline_milestone,this,false);
+        label.view.setText(getContext().getString(title)+"\n"+date.format(SentenceCalculator.DISPLAY_DATE)+"\n"+getContext().getString(R.string.service_number,number));
+        label.view.setTextColor(label.customColor);label.view.setClickable(false);label.view.setFocusable(false);
+        labels.add(label);historyLabels.add(label);addView(label.view);
     }
     public void setLimitRelevant(boolean visible){
         if(limitLabel==null||visible==labels.contains(limitLabel))return;
@@ -95,6 +109,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
         this.range = range;
         for (Label label : labels) removeView(label.view);
         labels.clear();
+        historyLabels.clear();chargeStages=Collections.emptyList();limitLabel=null;
         minimumLabel = maximumLabel = null;
         List<List<SentenceProjection.Milestone>> groups = new ArrayList<>();
         // Keep coincident custody dates in separate bubbles as well.
@@ -118,7 +133,9 @@ public final class TimelineMilestonesLayout extends ViewGroup {
                 label.today |= point.kind == SentenceProjection.Kind.TODAY;
                 label.minimum |= minimum;
                 label.maximum |= maximum;
-                title.setSpan(new ForegroundColorSpan(minimum ? minimumColor : maximum ? maximumColor : neutral),
+                if(point.kind==SentenceProjection.Kind.CLEMENCY_REVIEW)
+                    label.customColor=ContextCompat.getColor(getContext(),R.color.clemency_marker);
+                title.setSpan(new ForegroundColorSpan(markerColor(label)),
                         start, title.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             if(label.date.isBefore(range.start))title.append(" ←");
@@ -127,9 +144,11 @@ public final class TimelineMilestonesLayout extends ViewGroup {
             label.view = (TextView) LayoutInflater.from(getContext())
                     .inflate(R.layout.view_timeline_milestone, this, false);
             label.view.setText(title);
+            label.view.setTextColor(markerColor(label));
             label.view.setTag(label.date.toString());
             label.view.setOnClickListener(view -> listener.select(label.today ? LocalDate.now() : label.date));
             if(label.date.isBefore(range.start)){label.view.setClickable(false);label.view.setFocusable(false);}
+            if(group.get(0).kind==SentenceProjection.Kind.CLEMENCY_REVIEW)label.view.setId(R.id.timelineClemencyLabel);
             if (label.minimum) {
                 minimumLabel = label;
                 label.view.setId(R.id.timelineMinimumReleaseLabel);
@@ -192,6 +211,7 @@ public final class TimelineMilestonesLayout extends ViewGroup {
             case JAIL_COMMITMENT: return R.string.breakdown_marker_jail;
             case PRISON_COMMITMENT: return R.string.breakdown_marker_prison;
             case TODAY: return R.string.breakdown_today;
+            case CLEMENCY_REVIEW: return R.string.clemency_marker;
             case MINIMUM_ZERO: return R.string.breakdown_marker_minimum;
             default: return R.string.breakdown_marker_maximum;
         }
@@ -275,11 +295,12 @@ public final class TimelineMilestonesLayout extends ViewGroup {
         }
         canvas.restore();
         super.dispatchDraw(canvas);
-        if(overdueStart!=null&&selectedDate!=null&&selectedDate.isAfter(overdueStart)){
-            float a=slider.getTrackSidePadding()+range.positionOf(overdueStart)*slider.getTrackWidth();
-            float b=slider.getTrackSidePadding()+range.positionOf(selectedDate)*slider.getTrackWidth()-slider.getThumbWidth()/2f-slider.getThumbTrackGapSize();
-            if(b>a){paint.setStyle(Paint.Style.FILL);paint.setColor(ContextCompat.getColor(getContext(),R.color.laya_danger));canvas.drawRect(a,trackY-slider.getTrackHeight()/2f,b,trackY+slider.getTrackHeight()/2f,paint);}
+        for(int i=1;i<chargeStages.size();i++){
+            SequentialSentencePlan.Stage next=chargeStages.get(i),previous=chargeStages.get(i-1);
+            if(next.previousCustom&&next.start.isAfter(previous.maximum))
+                drawOverdueSegment(canvas,slider,trackY,previous.maximum,next.start);
         }
+        if(overdueStart!=null)drawOverdueSegment(canvas,slider,trackY,overdueStart,selectedDate);
         paint.setStyle(Paint.Style.FILL);
         for (Label label : labels) {
             if (!label.isZero()) {
@@ -342,6 +363,21 @@ public final class TimelineMilestonesLayout extends ViewGroup {
             }
         }
         paint.setStyle(Paint.Style.FILL);
+    }
+
+    private void drawOverdueSegment(Canvas canvas,Slider slider,float trackY,LocalDate from,LocalDate to){
+        if(range==null||selectedDate==null||to==null)return;
+        LocalDate end=selectedDate.isBefore(to)?selectedDate:to;
+        if(!end.isAfter(from))return;
+        boolean rtl=getLayoutDirection()==LAYOUT_DIRECTION_RTL;
+        float a=range.positionOf(from),b=range.positionOf(end);
+        a=slider.getTrackSidePadding()+(rtl?1-a:a)*slider.getTrackWidth();
+        b=slider.getTrackSidePadding()+(rtl?1-b:b)*slider.getTrackWidth();
+        float direction=rtl?-1:1;
+        if(end.equals(selectedDate))b-=direction*(slider.getThumbWidth()/2f+slider.getThumbTrackGapSize());
+        if((b-a)*direction<=0)return;
+        paint.setStyle(Paint.Style.FILL);paint.setColor(ContextCompat.getColor(getContext(),R.color.laya_danger));
+        canvas.drawRect(Math.min(a,b),trackY-slider.getTrackHeight()/2f,Math.max(a,b),trackY+slider.getTrackHeight()/2f,paint);
     }
 
     @Override protected LayoutParams generateDefaultLayoutParams() {

@@ -476,6 +476,10 @@ public class DashboardActivity extends AppCompatActivity {
                             && service.stageAt(calculationDate).number<service.ordered.size()
                             ? (result.minRemainingDays<=0 ? "Continue to next charge" : "") : result.actionText();
 
+                    boolean clemencyRecommended=result.available && ClemencyAssessment.create(profile,service)
+                            .recommend(calculationDate,result,service);
+                    if(clemencyRecommended)serviceAction=getString(R.string.clemency_action);
+
                     String minimumTimeRemaining =
                             "N/A";
 
@@ -567,6 +571,7 @@ public class DashboardActivity extends AppCompatActivity {
                     // ATTACH EXTRA CALCULATION DISPLAY DATA
                     // =========================================
 
+                    model.setClemencyRecommended(clemencyRecommended);
                     model.setCalculationAvailable(
                             result.available
                     );

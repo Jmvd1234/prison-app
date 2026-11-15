@@ -3,6 +3,8 @@
     <string name="profile_breakdown_title">Sentence Breakdown</string>
     <string name="minimum_remaining_sentence">Minimum remaining sentence</string>
     <string name="maximum_remaining_sentence">Maximum remaining sentence</string>
+    <string name="actual_time_served">Actual Time Served</string>
+    <string name="time_served_plus_allowances">Actual Time Served Plus Time Allowances</string>
     <string name="close_profile_breakdown">Close breakdown</string>
     <string name="profile_breakdown_close_symbol" translatable="false">\u00D7</string>
     <string name="breakdown_balance_value">%1$s (%2$d days)</string>

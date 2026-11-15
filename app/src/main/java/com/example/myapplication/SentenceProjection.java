@@ -14,7 +14,7 @@ import java.util.RandomAccess;
 public final class SentenceProjection {
     private SentenceProjection() { }
 
-    public enum Kind { LEA_ARREST, JAIL_COMMITMENT, PRISON_COMMITMENT, MINIMUM_ZERO, MAXIMUM_ZERO, TODAY }
+    public enum Kind { LEA_ARREST, JAIL_COMMITMENT, PRISON_COMMITMENT, MINIMUM_ZERO, MAXIMUM_ZERO, TODAY, CLEMENCY_REVIEW }
 
     /** Dates based on credits earned at observation, pinned once their first zero is reached. */
     public static final class ReleaseDates {

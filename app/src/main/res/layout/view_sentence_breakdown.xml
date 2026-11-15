@@ -194,6 +194,53 @@
     <TextView
         style="@style/BreakdownBalanceLabel"
         android:layout_marginTop="20dp"
+        android:labelFor="@id/actualTimeServedValue"
+        android:text="@string/actual_time_served"/>
+    <TextView
+        android:id="@+id/actualTimeServedValue"
+        style="@style/BreakdownBalanceValue"
+        android:background="@drawable/laya_summary_box"
+        android:padding="10dp"
+        tools:text="2y, 1m, 10d (771 days)"/>
+    <TextView
+        style="@style/BreakdownBalanceLabel"
+        android:layout_marginTop="16dp"
+        android:labelFor="@id/timeServedWithAllowancesValue"
+        android:text="@string/time_served_plus_allowances"/>
+    <TextView
+        android:id="@+id/timeServedWithAllowancesValue"
+        style="@style/BreakdownBalanceValue"
+        android:background="@drawable/laya_served_box"
+        android:textColor="@color/laya_served_text"
+        android:padding="10dp"
+        tools:text="4y, 0m, 10d (1471 days)"/>
+    <LinearLayout
+        android:id="@+id/serviceLimitSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/considerAllowancesInServiceLimit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:saveEnabled="false"
+            android:text="@string/service_consider_allowances"
+            android:textColor="@color/laya_label"
+            android:textSize="14sp"
+            android:paddingVertical="4dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/service_limit_mode_hint"
+            android:textColor="@color/laya_muted"
+            android:textSize="12sp"/>
+    </LinearLayout>
+    <TextView
+        style="@style/BreakdownBalanceLabel"
+        android:layout_marginTop="16dp"
         android:labelFor="@id/minimumSentenceValue"
         android:text="@string/minimum_remaining_sentence"/>
     <TextView

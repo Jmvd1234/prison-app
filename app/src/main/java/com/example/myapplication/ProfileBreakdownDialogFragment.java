@@ -48,12 +48,33 @@ public class ProfileBreakdownDialogFragment extends DialogFragment {
         View details=content.findViewById(R.id.openDetailedBreakdown);
         int id=requireArguments().getInt(BreakdownActivity.EXTRA_PROFILE_ID,-1);
         details.setVisibility(id>0?View.VISIBLE:View.GONE);
+        if(id>0){
+            com.example.myapplication.db.Profile profile=com.example.myapplication.db.AppDatabase.getInstance(requireContext()).ProfileDao().getProfileByProfileID(id);
+            long owner=requireContext().getSharedPreferences("user_session",0).getLong("currentUserID",-1);
+            if(profile!=null&&profile.userID==owner)bindLimitSetting(content,profile);
+        }
         details.setOnClickListener(v->{
             startActivity(new android.content.Intent(requireContext(),BreakdownActivity.class)
                     .putExtra(BreakdownActivity.EXTRA_PROFILE_ID,id));
             dismiss();
         });
         return builder.setView(content).create();
+    }
+
+    private void bindLimitSetting(View content,com.example.myapplication.db.Profile profile){
+        ServiceLimitSettings.bind(requireActivity(),content,profile,()->{},loaded->{
+            if(!isAdded())return;
+            java.time.LocalDate date=java.time.LocalDate.now();
+            SentenceCalculator.Result result=SequentialSentencePlan.initialResult(loaded,date);
+            if(result.available){
+                Bundle values=BreakdownViewBinder.createArguments(
+                        getString(R.string.breakdown_balance_value,result.minimumText(date),result.minRemainingDays),
+                        getString(R.string.breakdown_balance_value,result.maximumText(date),result.maxRemainingDays),result);
+                requireArguments().putAll(values);
+                BreakdownViewBinder.bind(content,values);
+            }
+            bindLimitSetting(content,loaded);
+        });
     }
 
 }

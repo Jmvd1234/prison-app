@@ -135,6 +135,8 @@ public class Profile_RecyclerViewAdapter
 
         // Keep cards compact; calculation notes are not appended to each profile.
         holder.suggestedAction.setText("Action: " + profile.getSuggestedAction());
+        holder.suggestedAction.setTextColor(androidx.core.content.ContextCompat.getColor(context,
+                profile.isClemencyRecommended()?R.color.laya_danger:R.color.laya_text));
         holder.suggestedAction.setVisibility(profile.getSuggestedAction().isEmpty()
                 ? View.GONE : View.VISIBLE);
 

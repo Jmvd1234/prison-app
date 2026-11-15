@@ -33,10 +33,12 @@ public final class TriggerFormController {
     private final TextView commitmentLabel;
     private final View stalInput;
     private boolean binding = true;
+    private final ClemencyFormController clemency;
 
     public TriggerFormController(AppCompatActivity activity, LinearLayout container) {
         if (container == null) throw new IllegalArgumentException("Missing triggerDetailsContainer.");
         this.activity = activity;
+        clemency = new ClemencyFormController(activity);
         notJail = required(R.id.committedSwitch);
         cpi = required(R.id.disqualifiedCPISwitch);
         ta = required(R.id.disqualifiedTASwitch);
@@ -115,6 +117,7 @@ public final class TriggerFormController {
                 prisonTransfer.setText(savedCommitment);
             }
         }
+        clemency.load(p, state);
         binding = false;
         refreshState();
         rebindPicker(commitment, JAIL_COMMITMENT);
@@ -167,6 +170,7 @@ public final class TriggerFormController {
         validateCustodyDate(prison, arrest, today, "Prison commitment");
         if (jail != null) SentenceCalculator.validatePrisonTransfer(jail, prison, today);
 
+        clemency.write(p);
         p.notCommittedToJail = notJail.isChecked();
         p.disqualifiedForCPI = cpi.isChecked();
         p.disqualifiedForTimeAllowances = cpi.isChecked() || ta.isChecked();
@@ -193,6 +197,7 @@ public final class TriggerFormController {
         state.putBoolean("ta", ta.isChecked());
         state.putString("commitment", text(commitment));
         state.putString("prisonTransfer", text(prisonTransfer));
+        clemency.save(state);
         outState.putBundle(KEY, state);
     }
 

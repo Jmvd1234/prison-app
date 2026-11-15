@@ -3,6 +3,9 @@ package com.example.myapplication;
 public class profileModel {
 
     private int profileID;
+    private boolean clemencyRecommended;
+    public void setClemencyRecommended(boolean value){clemencyRecommended=value;}
+    public boolean isClemencyRecommended(){return clemencyRecommended;}
     private int serviceChargeNumber;
     public void setServiceChargeNumber(int number){serviceChargeNumber=number;}
     public int getServiceChargeNumber(){return serviceChargeNumber;}

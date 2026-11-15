@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:background="@drawable/entertextbox"
+        android:layout_marginVertical="4dp" android:paddingHorizontal="8dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="@string/convicted" android:textColor="@color/laya_text" android:textSize="16sp"
+            android:labelFor="@id/convictedSwitch" android:paddingEnd="8dp"/>
+        <com.example.myapplication.InfoTooltip android:id="@+id/convictedHelp" style="@style/InfoTooltipButton"
+            app:helpTitle="@string/convicted" app:helpText="@string/convicted_help"/>
+        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/convictedSwitch"
+            android:layout_width="60dp" android:layout_height="48dp" android:layout_marginVertical="3dp"
+            android:contentDescription="@string/convicted" android:checked="false"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/clemencyDetails" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/clemency_category_title" android:textColor="@color/laya_label" android:textSize="14sp"
+                android:labelFor="@id/clemencyCategory"/>
+            <com.example.myapplication.InfoTooltip android:id="@+id/clemencyHelp" style="@style/InfoTooltipButton"
+                app:helpTitle="@string/clemency_category_title" app:helpText="@string/clemency_help"/>
+        </LinearLayout>
+        <TextView android:id="@+id/clemencyCategory" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="48dp" android:gravity="center_vertical" android:textSize="14sp"
+            android:padding="12dp" android:drawableEnd="@drawable/ic_clemency_expand" android:drawablePadding="8dp"
+            android:background="@drawable/entertextbox" android:textColor="@color/laya_text"
+            android:clickable="true" android:focusable="true"/>
+    </LinearLayout>
+</LinearLayout>

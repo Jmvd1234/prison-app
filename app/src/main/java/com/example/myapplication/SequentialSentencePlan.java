@@ -10,8 +10,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * User-requested sequential simulation. The cap limits actual custody, after each
- * charge's allowances, and is deliberately separate from the aggregate calculator.
+ * Sequential simulation with a shared service cap. By default earned net allowances
+ * count toward that cap; each profile can retain the original actual-custody mode.
  * Choices retain the previous endpoint; every new charge keeps its full range. Dates are
  * recomputed from those choices when custody inputs or monthly deductions change.
  */
@@ -19,12 +19,13 @@ public final class SequentialSentencePlan {
     public static final class Stage {
         public final int number;
         public final ProfileCharge charge;
-        public final LocalDate start, minimum, maximum;
+        public final LocalDate start, minimum, maximum, capDate;
         public final boolean previousMaximum, previousCustom;
         private final long consumedCredit;
-        private Stage(int number, ProfileCharge charge, LocalDate start, boolean previousMaximum, boolean previousCustom, long consumedCredit, LocalDate minimum, LocalDate maximum) {
+        private Stage(int number, ProfileCharge charge, LocalDate start, boolean previousMaximum, boolean previousCustom, long consumedCredit, LocalDate minimum, LocalDate maximum, LocalDate capDate) {
             this.number=number; this.charge=charge; this.start=start; this.previousMaximum=previousMaximum; this.previousCustom=previousCustom;
             this.minimum=minimum; this.maximum=maximum; this.consumedCredit=consumedCredit;
+            this.capDate=capDate;
         }
     }
 
@@ -33,6 +34,8 @@ public final class SequentialSentencePlan {
     public final List<Stage> stages;
     public final LocalDate start, commitment, capDate;
     public final long capDays;
+    public final boolean fortyYearLimit;
+    private final LocalDate custodyCapDate;
     public final String choices;
 
     public SequentialSentencePlan(Profile profile) {
@@ -50,8 +53,9 @@ public final class SequentialSentencePlan {
                 throw new IllegalArgumentException("Minimum penalty exceeds maximum penalty.");
         }
         capDays=maximumServiceDays(profile);
-        // Gaps do not count as actual custody; allowances never move this marker.
-        capDate=start.plusDays(Math.addExact(capDays,profile.timeGapDays));
+        fortyYearLimit=ordered.size()>1&&ChronoUnit.DAYS.between(commitment,commitment.plusYears(40))
+                <=Math.multiplyExact(term(ordered.get(0),commitment,true),3);
+        custodyCapDate=start.plusDays(Math.addExact(capDays,profile.timeGapDays));
         choices=profile.serviceChoices==null?"":profile.serviceChoices;
         List<String> route=decodeChoices(choices);
         if(route.size()>=ordered.size())throw new IllegalArgumentException("Saved charge choices exceed the charge count.");
@@ -67,12 +71,18 @@ public final class SequentialSentencePlan {
                 Stage previous=built.get(i-1);
                 nextStart=previousCustom?LocalDate.parse(code.substring(1)):
                         previousMaximum?previous.maximum:previous.minimum;
-                if(nextStart.isBefore(previous.start)||nextStart.isAfter(previous.maximum))
-                    throw new IllegalArgumentException("Custom end date must be between the charge start and maximum release date.");
+                if(nextStart.isBefore(previous.start))
+                    throw new IllegalArgumentException("Custom end date must be on or after the charge start.");
+                if(!profile.considerAllowancesInServiceLimit&&previousCustom&&!nextStart.isBefore(custodyCapDate))
+                    throw new IllegalArgumentException("Custom end date must be before the service limit.");
+                // A setting/deduction change may make saved handoffs unavailable. Keep
+                // their tokens, but stop serving charges at the first applicable limit.
+                if(!previous.maximum.isBefore(previous.capDate)||!nextStart.isBefore(previous.capDate))break;
                 SentenceCalculator.Result atBoundary=raw(previous,nextStart);
                 if(previousCustom) {
                     // A custom handoff closes the earlier charge with precisely the credit
-                    // earned by that date. Do not charge its unserved nominal term again.
+                    // earned by that date, including any delay past its maximum. Those
+                    // days and allowances must not also pay down the next charge.
                     consumedCredit=atBoundary.actualPreventiveDays+atBoundary.actualServiceDays
                             +atBoundary.netAllowanceDays-profile.timeGapDays-atBoundary.stalDays;
                 } else {
@@ -80,13 +90,15 @@ public final class SequentialSentencePlan {
                     // Preserve surplus anniversary credit for ordinary min/max handoffs.
                     consumedCredit=previous.consumedCredit+servedTerm-atBoundary.stalDays;
                 }
-                if(!previous.maximum.isBefore(capDate))break; // No charge can start beyond the custody limit.
             }
-            Stage pending=new Stage(i+1,ordered.get(i),nextStart,previousMaximum,previousCustom,consumedCredit,null,null);
+            Stage draft=new Stage(i+1,ordered.get(i),nextStart,previousMaximum,previousCustom,consumedCredit,null,null,null);
+            LocalDate stageCap=findCapDate(draft);
+            Stage pending=new Stage(i+1,draft.charge,nextStart,previousMaximum,previousCustom,consumedCredit,null,null,stageCap);
             LocalDate minimum=completion(pending,true), maximum=completion(pending,false);
-            built.add(new Stage(i+1,pending.charge,nextStart,previousMaximum,previousCustom,consumedCredit,minimum,maximum));
+            built.add(new Stage(i+1,pending.charge,nextStart,previousMaximum,previousCustom,consumedCredit,minimum,maximum,stageCap));
         }
         stages=Collections.unmodifiableList(built);
+        capDate=active().capDate;
     }
 
     public Stage stageAt(LocalDate date){
@@ -105,7 +117,8 @@ public final class SequentialSentencePlan {
         LocalDate arrest=SentenceCalculator.optionalDate(input.leaArrestDate,"LEA arrest date");
         LocalDate jail=SentenceCalculator.optionalDate(input.jailBeforePrisonDate,"Jail commitment date");
         LocalDate start=arrest!=null?arrest:jail!=null?jail:anchor;
-        long remaining=ChronoUnit.DAYS.between(date,start.plusDays(maximumServiceDays(profile)+profile.timeGapDays));
+        long remaining=maximumServiceDays(profile)-(profile.considerAllowancesInServiceLimit
+                ?first.timeServedWithAllowancesDays:first.actualTimeServedDays);
         return first.withBalances(Math.min(first.minRemainingDays,remaining),Math.min(first.maxRemainingDays,remaining),
                 first.minSentenceDays,first.maxSentenceDays,profile.charges.size());
     }
@@ -117,28 +130,29 @@ public final class SequentialSentencePlan {
         // Before the cap date, only a charge actually constrained by the cap
         // at this observation should expose it.
         if(!observation.isBefore(active().maximum))return !active().maximum.isBefore(capDate);
-        return calculate(active(),observation,false).maxRemainingDays>=ChronoUnit.DAYS.between(observation,capDate);
+        return calculate(active(),observation,false).maxRemainingDays>=capRemaining(active(),observation,raw(active(),observation));
     }
     public LocalDate overdueStart(LocalDate observation){
         if(!active().maximum.isBefore(capDate))return capDate;
         return finalCharge()?active().maximum:!observation.isBefore(capDate)?capDate:null;
     }
     public String appendChoice(boolean fromMaximum,LocalDate observation){
-        if(limitRelevant(observation))throw new IllegalArgumentException("actual custody limit reached.");
+        if(limitRelevant(observation))throw new IllegalArgumentException(limitReachedText());
         return appendChoice(false,fromMaximum);
     }
     public boolean finalCharge(){return active().number==ordered.size();}
     public String appendChoice(boolean ignoredNextMaximum,boolean fromMaximum) {
-        if(!hasNext())throw new IllegalArgumentException(!active().maximum.isBefore(capDate)?"actual custody limit reached.":"No further charge can be served.");
+        if(!hasNext())throw new IllegalArgumentException(!active().maximum.isBefore(capDate)?limitReachedText():"No further charge can be served.");
         LocalDate boundary=fromMaximum?active().maximum:active().minimum;
-        if(!boundary.isBefore(capDate))throw new IllegalArgumentException("The custody limit has already been reached at this endpoint.");
+        if(!boundary.isBefore(capDate))throw new IllegalArgumentException(limitReachedText());
         return appendToken(fromMaximum?"2":"0");
     }
 
     public String appendCustomDate(LocalDate date, LocalDate observation) {
-        if(!hasNext()||limitRelevant(observation))throw new IllegalArgumentException("actual custody limit reached.");
-        if(date==null||date.isBefore(active().start)||date.isAfter(active().maximum))
-            throw new IllegalArgumentException("Choose a date from the charge start through its maximum release date.");
+        if(!hasNext()||limitRelevant(observation))throw new IllegalArgumentException(limitReachedText());
+        if(date==null||date.isBefore(active().start))
+            throw new IllegalArgumentException("Choose a date on or after the charge start.");
+        if(!date.isBefore(capDate))throw new IllegalArgumentException(limitReachedText());
         return appendToken("@"+date);
     }
     private String appendToken(String token) {
@@ -176,9 +190,35 @@ public final class SequentialSentencePlan {
         long maxTerm=term(stage.charge,stage.number==1?commitment:stage.start,true);
         long earned=current.actualPreventiveDays+current.actualServiceDays+current.netAllowanceDays-profile.timeGapDays;
         earned-=stage.consumedCredit;
-        long capRemaining=capped?ChronoUnit.DAYS.between(date,capDate):Long.MAX_VALUE;
+        long capRemaining=capped?capRemaining(stage,date,current):Long.MAX_VALUE;
         return current.withBalances(Math.min(minTerm-earned,capRemaining),
                 Math.min(maxTerm-earned,capRemaining),minTerm,maxTerm,ordered.size());
+    }
+
+    public String limitReachedText(){
+        return fortyYearLimit?"40 year maximum time reached":"Threefold rule time reached";
+    }
+
+    private long capRemaining(Stage stage,LocalDate date,SentenceCalculator.Result current){
+        long remaining=capDays-(profile.considerAllowancesInServiceLimit
+                ?current.timeServedWithAllowancesDays:current.actualTimeServedDays);
+        // Release stays at the first crossing even if a later deduction lowers credits.
+        if(!date.isBefore(stage.capDate))remaining=Math.min(remaining,ChronoUnit.DAYS.between(date,stage.capDate));
+        return remaining;
+    }
+
+    private LocalDate findCapDate(Stage stage){
+        if(!profile.considerAllowancesInServiceLimit)return custodyCapDate;
+        // Scan rather than interpolate: allowances arrive at monthly anniversaries,
+        // and withheld months can make credited service non-monotonic.
+        LocalDate end=start.plusYears(200);
+        for(LocalDate date=stage.start;!date.isAfter(end);date=date.plusDays(1)){
+            if(Thread.currentThread().isInterrupted())throw new IllegalStateException("Projection cancelled.");
+            SentenceCalculator.Result result=raw(stage,date);
+            if(!result.available)throw new IllegalArgumentException(result.problem);
+            if(result.timeServedWithAllowancesDays>=capDays)return date;
+        }
+        throw new IllegalArgumentException("Service exceeds the supported projection range.");
     }
 
     private SentenceCalculator.Result raw(Stage stage,LocalDate date) {
@@ -192,7 +232,7 @@ public final class SequentialSentencePlan {
     private LocalDate completion(Stage stage,boolean minimum) {
         // Monthly deductions may make balances non-monotonic. A daily scan returns
         // the first actual crossing even when credits are withheld the next month.
-        LocalDate end=capDate;
+        LocalDate end=stage.capDate;
         if(ChronoUnit.DAYS.between(stage.start,end)>200*366L)
             throw new IllegalArgumentException("Service exceeds the supported projection range.");
         for(LocalDate date=stage.start;!date.isAfter(end);date=date.plusDays(1)) {
